@@ -120,15 +120,14 @@ if __name__ == "__main__":
     NEGPAIRS = args.negpairs
     
     MAX_LEN = 512
-    LEARNING_RATE = 3e-5
+    LEARNING_RATE = 1e-3
     CLIPNORM =  1.0
 
-
-    data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\gutenberg"
-    EPOCHS=5
-    BATCH_SIZE=5
-    NEGPAIRS=5
-    name="poutou"
+    # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\gutenberg"
+    # EPOCHS=5
+    # BATCH_SIZE=5
+    # NEGPAIRS=5
+    # name="poutou"
 
     method = "deep_style_%s" % name
 
