@@ -317,7 +317,7 @@ if __name__ == "__main__":
 
             ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
-            print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss.item(), a_loss.item(), p_loss.item(), ce, lr), flush=True)
+            print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss, a_loss, p_loss, ce, lr), flush=True)
 
     print("------------ Beginning Training ------------", flush=True)
 
