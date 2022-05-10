@@ -116,11 +116,11 @@ class VADER(torch.nn.Module):
             doc_emb = self.reparameterize(doc_mean, doc_var)
             aut_emb = self.reparameterize(author_mean, author_logvar)
 
-            features_probs = self.logistic_classifier_features(features, doc_emb)
+            features_probs = self.logistic_classifier_features(features, doc_emb, apply_sigmoid=False)
 
             distance = torch.sqrt(torch.sum(torch.square(doc_emb - aut_emb), dim=1))
 
-            author_probs = self.logistic_classifier(distance)
+            author_probs = self.logistic_classifier(distance, apply_sigmoid=False)
 
             author_loss += criterion(author_probs, y_authors)
             feature_loss += criterion(features_probs, y_features)
