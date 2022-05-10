@@ -50,18 +50,18 @@ def read(file_path):
         content=clean_str(f_in.read())
     return(content)
 
-def convert_ids_to_features_array(tokenizer, ids, document, columns):
+def convert_ids_to_features_array(tokenizer, start, ids, document, columns):
     c=""
     i=0
     n=len(tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(ids)).replace(" ",""))
     while i<n:
-        s=document[i]
+        s=document[start+1+i]
         c=c+s
         if s==" ":
             n+=1
         i+=1
 
-    return features_array_from_string(c, columns)
+    return features_array_from_string(c, columns), n+start
 
 class book_Dataset(Dataset):
     def __init__(self, books, authors, tokenizer, max_len, columns, with_features=True):
@@ -85,8 +85,14 @@ class book_Dataset(Dataset):
         if (len(parts) > 1) & (len(parts[-1]) < int(self.max_len * 0.3)):
             parts = parts[:-1]
 
+        start=0
+        features = []
         if self.with_features:
-            features = [convert_ids_to_features_array(self.tokenizer, part[1:-1], doc, columns) for part in parts]
+            for part in parts:
+                feature, n = convert_ids_to_features_array(self.tokenizer, start, part[1:-1], doc, columns)
+                start+=n
+
+                features.append(feature)
 
         masks = [[1]* self.max_len for _ in parts]
 
@@ -291,6 +297,8 @@ if __name__ == "__main__":
         return ce, lr
 
     def fit(epochs, model, loss_fn, opt, train_dl, x, x_mask, x_features, test_dl, aut_doc_test, features):
+
+        ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
         for epoch in range(1,epochs+1):
             model.train()
