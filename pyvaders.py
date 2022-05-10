@@ -250,6 +250,10 @@ if __name__ == "__main__":
     x_features = torch.tensor(x_features, dtype=torch.float32)
 
     model = VADER(na, 300, L=10)
+
+    for param in model.encoder.parameters():
+        param.requires_grad = False
+
     model.to(device)
 
     criterion = nn.BCEWithLogitsLoss()
