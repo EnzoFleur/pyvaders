@@ -54,14 +54,15 @@ def convert_ids_to_features_array(tokenizer, start, ids, document, columns):
     c=""
     i=0
     n=len(tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(ids)).replace(" ",""))
-    while i<n:
-        s=document[start+1+i]
-        c=c+s
-        if s==" ":
-            n+=1
-        i+=1
+    count=0
+    for s in document:
+        c = c+s
+        if s!=" ":
+            count+=1
+        if count==n:
+            break
 
-    return features_array_from_string(c, columns), n+start
+    return features_array_from_string(c, columns), len(c)+start
 
 class book_Dataset(Dataset):
     def __init__(self, books, authors, tokenizer, max_len, columns, with_features=True):
@@ -89,8 +90,8 @@ class book_Dataset(Dataset):
         features = []
         if self.with_features:
             for part in parts:
-                feature, n = convert_ids_to_features_array(self.tokenizer, start, part[1:-1], doc, columns)
-                start+=n
+                feature, n = convert_ids_to_features_array(self.tokenizer, start, part[1:-1], doc, self.columns)
+                start=n
 
                 features.append(feature)
 
