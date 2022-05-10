@@ -286,7 +286,7 @@ if __name__ == "__main__":
             np.save(os.path.join("results", method, "aut_%s.npy" % method), aut_embeddings)
             np.save(os.path.join("results", method, "aut_var_%s.npy" % method), aut_vars)
             np.save(os.path.join("results", method, "doc_%s.npy" % method), doc_embeddings)
-            res_df.to_csv(os.path.join("results", "deep_style", "style_%s.csv" % "deep_style"), sep=";")
+            res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
         
         return ce, lr
 
