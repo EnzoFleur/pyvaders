@@ -152,7 +152,6 @@ if __name__ == "__main__":
         for doc in docs:
             doc2aut[doc.replace(".txt", "")] = author
             content = read(os.path.join(data_dir, author, doc))
-            # tf_content = tf.convert_to_tensor(distilBertEncode(content))
             documents.append(content)
 
     aut2id = dict(zip(authors, list(range(len(authors)))))
@@ -173,7 +172,7 @@ if __name__ == "__main__":
 
     features = pd.read_csv(os.path.join("data", "gutenberg", "features", "features.csv"), sep=";").sort_values(by=["author", "id"])
 
-    features = features[features.author.isin(authors)]
+    # features = features[features.author.isin(authors)]
 
     features_test = features.drop(["id", "author", 'needn\'t', 'couldn\'t', 'hasn\'t', 'mightn\'t', 'you\'ve', 'shan\'t', 'aren',
         'weren\'t', 'mustn', 'shan', 'should\'ve', 'mightn', 'needn', 'hadn\'t',
@@ -325,6 +324,8 @@ if __name__ == "__main__":
                 loss.backward()
                 # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
+
+            print("Bibou")
 
             ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
