@@ -154,6 +154,8 @@ if __name__ == "__main__":
     nd = len(doc2id)
     na = len(aut2id)
 
+    print("%d authors and %d documents.\n" % (na, nd), flush=True)
+
     di2ai = {doc2id[d]: aut2id[a] for d,a in doc2aut.items()}
 
     doc_train, doc_test, docid_train, docid_test, y_train, y_test = train_test_split(documents, list(doc2id.values()), list(di2ai.values()), test_size=0.2, stratify=list(di2ai.values()))
@@ -182,6 +184,7 @@ if __name__ == "__main__":
 
     x_test = []
     x_mask_test = []
+
     print("------------ Tokenizing Test Set ------------", flush=True)
     for doc, mask, _ in tqdm(test_set, total=len(doc_test)):
         x_test.append(doc)
@@ -204,6 +207,8 @@ if __name__ == "__main__":
     x_features = stdScale.transform(np.vstack(x_features))
     y = np.array(y)
 
+    print("%f sample per document on average.\n" % (len(x_mask)/nd), flush=True)
+
     print("------------ Building Pairs ------------", flush=True)
     data_pairs = []
     features_train = []
@@ -221,6 +226,8 @@ if __name__ == "__main__":
 
         data_pairs.extend([[d, i, f] for i, f in zip(np.random.choice(y[y!=a],NEGPAIRS), sample(doc_ids[:d] + doc_ids[d+1:], NEGPAIRS))])
         labels.extend([[0,0] for _ in range(NEGPAIRS)])
+
+    print("%d training pairs created.\n" % len(labels), flush=True)
 
     train_dl = DataLoader(TensorDataset(torch.LongTensor(data_pairs),
                                         torch.tensor(labels, dtype=torch.float32)),
@@ -254,9 +261,12 @@ if __name__ == "__main__":
                 doc_emb, _ = model(doc, mask)
                 doc_embeddings.append(doc_emb.cpu().detach().numpy())
 
-            for i in range(model.na):
-                aut_embeddings.append(model.mean_author(torch.LongTensor([i])).cpu().detach().numpy())
-                aut_vars.append(model.logvar_author(torch.LongTensor([i])).cpu().detach().numpy())
+            ll = [i for i in range(model.na)]
+            for i in range(0, model.na, BATCH_SIZE):
+
+                ids = torch.LongTensor(ll[i:i+BATCH_SIZE]).to(device)
+                aut_embeddings.append(model.mean_author(ids).cpu().detach().numpy())
+                aut_vars.append(model.logvar_author(ids).cpu().detach().numpy())
 
             doc_embeddings = np.vstack(doc_embeddings)
             aut_embeddings = np.vstack(aut_embeddings)
