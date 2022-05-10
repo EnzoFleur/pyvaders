@@ -173,6 +173,8 @@ if __name__ == "__main__":
 
     features = pd.read_csv(os.path.join("data", "gutenberg", "features", "features.csv"), sep=";").sort_values(by=["author", "id"])
 
+    features = features[features.author.isin(authors)]
+
     features_test = features.drop(["id", "author", 'needn\'t', 'couldn\'t', 'hasn\'t', 'mightn\'t', 'you\'ve', 'shan\'t', 'aren',
         'weren\'t', 'mustn', 'shan', 'should\'ve', 'mightn', 'needn', 'hadn\'t',
         'aren\'t', 'hadn', 'that\'ll', '£', '€', '<', '\'', '^', '~'], axis=1)
