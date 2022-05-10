@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # NEGPAIRS=5
     # name="poutou"
 
-    method = "deep_style_%s" % name
+    method = "pyvaders_%s" % name
 
     authors = sorted([a for a in os.listdir(os.path.join(data_dir)) if os.path.isdir(os.path.join(data_dir, a))])[:10]
     documents = []
@@ -322,5 +322,8 @@ if __name__ == "__main__":
             print("[%d/%d]  F-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, loss.item(), ce, lr), flush=True)
 
     print("------------ Beginning Training ------------", flush=True)
+
+    if not os.path.isdir(os.path.join("results",method)):
+        os.mkdir(os.path.join("results",method))
 
     fit(EPOCHS, model, criterion, optimizer, train_dl, x, x_mask, x_features, test_dl, aut_doc_test[doc_tp,:], features)
