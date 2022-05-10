@@ -207,7 +207,7 @@ if __name__ == "__main__":
     x_features = stdScale.transform(np.vstack(x_features))
     y = np.array(y)
 
-    print("%d total samples with an average of %f samples per document.\n" % (len(x_mask), len(x_mask)/nd), flush=True)
+    print("%d total samples with an average of %.2f samples per document.\n" % (len(x_mask), len(x_mask)/nd), flush=True)
 
     print("------------ Building Pairs ------------", flush=True)
     data_pairs = []
@@ -268,32 +268,33 @@ if __name__ == "__main__":
                 aut_embeddings.append(model.mean_author(ids).cpu().detach().numpy())
                 aut_vars.append(model.logvar_author(ids).cpu().detach().numpy())
 
-            doc_embeddings = np.vstack(doc_embeddings)
-            aut_embeddings = np.vstack(aut_embeddings)
-            aut_vars = np.vstack(aut_vars)
+        doc_embeddings = np.vstack(doc_embeddings)
+        aut_embeddings = np.vstack(aut_embeddings)
+        aut_vars = np.vstack(aut_vars)
 
-            aa = normalize(aut_embeddings, axis=1)
-            dd = normalize(doc_embeddings, axis=1)
-            y_score = normalize( dd @ aa.transpose(),norm="l1")
-            ce = coverage_error(aut_doc_test, y_score)/na*100
-            lr = label_ranking_average_precision_score(aut_doc_test, y_score)*100
-            print("coverage, precision", flush=True)
-            print(str(round(ce,2)) + ", "+ str(round(lr,2)))
+        aa = normalize(aut_embeddings, axis=1)
+        dd = normalize(doc_embeddings, axis=1)
+        y_score = normalize( dd @ aa.transpose(),norm="l1")
+        ce = coverage_error(aut_doc_test, y_score)/na*100
+        lr = label_ranking_average_precision_score(aut_doc_test, y_score)*100
+        print("coverage, precision", flush=True)
+        print(str(round(ce,2)) + ", "+ str(round(lr,2)))
 
-            res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index(), n_fold=10)
-            print(res_df)
+        res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index(), n_fold=10)
+        print(res_df)
 
-            np.save(os.path.join("results", method, "aut_%s.npy" % method), aut_embeddings)
-            np.save(os.path.join("results", method, "aut_var_%s.npy" % method), aut_vars)
-            np.save(os.path.join("results", method, "doc_%s.npy" % method), doc_embeddings)
-            res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
-        
+        np.save(os.path.join("results", method, "aut_%s.npy" % method), aut_embeddings)
+        np.save(os.path.join("results", method, "aut_var_%s.npy" % method), aut_vars)
+        np.save(os.path.join("results", method, "doc_%s.npy" % method), doc_embeddings)
+        res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
+    
         return ce, lr
 
     def fit(epochs, model, loss_fn, opt, train_dl, x, x_mask, x_features, test_dl, aut_doc_test, features):
 
         for epoch in range(1,epochs+1):
             model.train()
+            opt.zero_grad()
             for x_train, y_train in tqdm(train_dl):
                 
                 doc , author, doc_f = torch.tensor_split(x_train, 3, dim=1)
@@ -308,18 +309,17 @@ if __name__ == "__main__":
                 author = author.to(device)
                 y_train= y_train.to(device)
 
-                f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
+                loss, f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
 
                 loss = f_loss + a_loss + p_loss
 
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
+                # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
-                opt.zero_grad()
 
             ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
-            print("[%d/%d]  F-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, loss.item(), ce, lr), flush=True)
+            print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss.item(), a_loss.item(), p_loss.item(), ce, lr), flush=True)
 
     print("------------ Beginning Training ------------", flush=True)
 

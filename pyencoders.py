@@ -132,7 +132,9 @@ class VADER(torch.nn.Module):
         feature_loss *= self.alpha/self.L
         prior_loss *= self.beta
 
-        return feature_loss, author_loss, prior_loss
+        loss = feature_loss + author_loss + prior_loss
+
+        return loss, feature_loss.item(), author_loss.item(), prior_loss.item()
 
 class DeepStyle(torch.nn.Module):
     def __init__(self, na):
