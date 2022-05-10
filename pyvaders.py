@@ -207,7 +207,7 @@ if __name__ == "__main__":
     x_features = stdScale.transform(np.vstack(x_features))
     y = np.array(y)
 
-    print("%f sample per document on average.\n" % (len(x_mask)/nd), flush=True)
+    print("%d total samples with an average of %f samples per document.\n" % (len(x_mask), len(x_mask)/nd), flush=True)
 
     print("------------ Building Pairs ------------", flush=True)
     data_pairs = []
