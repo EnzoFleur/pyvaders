@@ -118,6 +118,8 @@ if __name__ == "__main__":
                         help='name')
     parser.add_argument('-n','--negpairs', default=1, type=int,
                         help='Number of negative pairs to sample')
+    parser.add_argument('-lr','--learningrate', default=1e-3, type=float,
+                        help='Learning rate')
     args = parser.parse_args()
 
     data_dir = args.dataset
@@ -125,11 +127,13 @@ if __name__ == "__main__":
     BATCH_SIZE = args.batchsize
     EPOCHS = args.epochs
     NEGPAIRS = args.negpairs
+    LEARNING_RATE = args.learningrate
+
     
     MAX_LEN = 512
-    LEARNING_RATE = 3e-5
     CLIPNORM =  1.0
 
+    # LEARNING_RATE = 5e.5
     # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\gutenberg"
     # EPOCHS=5
     # BATCH_SIZE=5
