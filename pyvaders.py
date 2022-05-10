@@ -311,8 +311,6 @@ if __name__ == "__main__":
 
                 loss, f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
 
-                loss = f_loss + a_loss + p_loss
-
                 loss.backward()
                 # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
