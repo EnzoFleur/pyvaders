@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
     method = "pyvaders_%s" % name
 
-    authors = sorted([a for a in os.listdir(os.path.join(data_dir)) if os.path.isdir(os.path.join(data_dir, a))])[:10]
+    authors = sorted([a for a in os.listdir(os.path.join(data_dir)) if os.path.isdir(os.path.join(data_dir, a))])
     documents = []
     doc2aut = {}
     id_docs = []
