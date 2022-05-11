@@ -120,6 +120,8 @@ if __name__ == "__main__":
                         help='Number of negative pairs to sample')
     parser.add_argument('-lr','--learningrate', default=1e-3, type=float,
                         help='Learning rate')
+    parser.add_argument('-c','--cliping', default=0, type=int,
+                        help='cliping')
     args = parser.parse_args()
 
     data_dir = args.dataset
@@ -128,12 +130,12 @@ if __name__ == "__main__":
     EPOCHS = args.epochs
     NEGPAIRS = args.negpairs
     LEARNING_RATE = args.learningrate
-
+    cliping = args.cliping
     
     MAX_LEN = 512
     CLIPNORM =  1.0
 
-    # LEARNING_RATE = 5e.5
+    # LEARNING_RATE = 5e-5
     # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\gutenberg"
     # EPOCHS=5
     # BATCH_SIZE=5
@@ -142,7 +144,7 @@ if __name__ == "__main__":
 
     method = "pyvaders_%s" % name
 
-    authors = sorted([a for a in os.listdir(os.path.join(data_dir)) if os.path.isdir(os.path.join(data_dir, a))])
+    authors = sorted([a for a in os.listdir(os.path.join(data_dir)) if os.path.isdir(os.path.join(data_dir, a))])[:10]
     documents = []
     doc2aut = {}
     id_docs = []
@@ -251,8 +253,8 @@ if __name__ == "__main__":
 
     model = VADER(na, 300, L=10)
 
-    for param in model.encoder.parameters():
-        param.requires_grad = False
+    # for param in model.encoder.parameters():
+    #     param.requires_grad = False
 
     model.to(device)
 
@@ -275,7 +277,7 @@ if __name__ == "__main__":
                 mask = torch.LongTensor(mask).to(device)
 
                 doc_emb, _ = model(doc, mask)
-                doc_embeddings.append(doc_emb.cpu().detach().numpy())
+                doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
             ll = [i for i in range(model.na)]
             for i in range(0, model.na, BATCH_SIZE):
@@ -330,7 +332,8 @@ if __name__ == "__main__":
                 loss, f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
 
                 loss.backward()
-                # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
+                if cliping==1:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
 
             print("Bibou")

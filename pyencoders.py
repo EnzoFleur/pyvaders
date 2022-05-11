@@ -10,9 +10,38 @@ device = 'cuda' if cuda.is_available() else 'cpu'
 
 DISTILBERT_PATH = os.path.join("..","distilBERT", "distilbert-base-uncased")
 
+class DAN(torch.nn.Module):
+
+    def __init__(self, input_dim, hidden, r):
+        super(DAN, self).__init__()
+
+        self.input_dim = input_dim
+        self.hidden = hidden
+        self.r = r
+
+        self.do1 = torch.nn.Dropout(0.1)
+        self.bn1 = torch.nn.BatchNorm1d(input_dim)
+        self.fc1 = torch.nn.Linear(input_dim, hidden)
+        self.do2 = torch.nn.Dropout(0.1)
+        self.bn2 = torch.nn.BatchNorm1d(hidden)
+        self.fc2 = torch.nn.Linear(hidden, r)
+
+    def forward(self, x):
+
+        x = x.mean(dim=1)
+        x = self.do1(x)
+        x = self.bn1(x)
+        x = self.fc1(x)
+        x = self.do2(x)
+        x = self.bn2(x)
+        x = self.fc2(x)
+
+        return x
+
+
 class MLP(torch.nn.Module):
         def __init__(self, input_size, output_size):
-            super().__init__()
+            super(MLP, self).__init__()
 
             self.bn = torch.nn.BatchNorm1d(input_size)
             self.do = torch.nn.Dropout(p=0.1)
@@ -29,7 +58,7 @@ class MLP(torch.nn.Module):
 
 class VADER(torch.nn.Module):
     def __init__(self, na, doc_r, beta=1e-12, alpha=1/2, L=1):
-        super().__init__()
+        super(VADER, self).__init__()
         self.na = na
         self.beta = beta
         self.L = L
@@ -45,8 +74,8 @@ class VADER(torch.nn.Module):
         self.a_features = torch.nn.Parameter(torch.rand(1))
         self.b_features = torch.nn.Parameter(torch.rand(1))
 
-        self.doc_mean = MLP(768, self.doc_r)
-        self.doc_var = MLP(768, self.doc_r)
+        self.doc_mean = DAN(768, 512, self.doc_r)
+        self.doc_var = DAN(768, 512, self.doc_r)
 
         self.mean_author = torch.nn.Embedding(self.na, self.doc_r)
         torch.nn.init.normal_(self.mean_author.weight, mean=0.0, std=1.0)
@@ -84,12 +113,12 @@ class VADER(torch.nn.Module):
         
         distilbert_output = self.encoder(ids, mask)
         hidden_state = distilbert_output[0]
-        doc_emb = hidden_state[:,0]
+        # doc_emb = hidden_state[:,0]
         
-        doc_mean = self.doc_mean(doc_emb)
-        doc_var = self.doc_var(doc_emb)
+        doc_mean = self.doc_mean(hidden_state)
+        doc_var = self.doc_var(hidden_state)
 
-        return torch.mean(doc_mean, dim=0), torch.mean(doc_var, dim=0)
+        return doc_mean, doc_var
 
     def loss_VIB(self, authors, doc, mask, features, y, criterion):
 
@@ -97,12 +126,14 @@ class VADER(torch.nn.Module):
         y_authors = y_authors.squeeze()
         y_features = y_features.squeeze()
 
-        distilbert_output = self.encoder(doc, mask)
-        hidden_state = distilbert_output[0]
-        doc_emb = self.drop(hidden_state[:,0])
+        # distilbert_output = self.encoder(doc, mask)
+        # hidden_state = distilbert_output[0]
+        # doc_emb = self.drop(hidden_state[:,0])
 
-        doc_mean = self.doc_mean(doc_emb)
-        doc_var = self.doc_var(doc_emb)
+        # doc_mean = self.doc_mean(doc_emb)
+        # doc_var = self.doc_var(doc_emb)
+
+        doc_mean, doc_var = self(doc, mask)
 
         author_mean = self.mean_author(authors).squeeze()
         author_logvar = self.logvar_author(authors).squeeze()
@@ -138,7 +169,7 @@ class VADER(torch.nn.Module):
 
 class DeepStyle(torch.nn.Module):
     def __init__(self, na):
-        super().__init__()
+        super(DeepStyle, self).__init__()
         self.na = na
         self.distilBERT = DistilBertModel.from_pretrained(DISTILBERT_PATH)
         self.drop = torch.nn.Dropout(0.1)
