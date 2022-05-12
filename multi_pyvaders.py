@@ -169,7 +169,9 @@ if __name__ == "__main__":
     id_docs = []
     part_mask = []
 
-    print("------------ Reading Corpora ------------", flush=True)
+    if idr_torch.rank == 0:
+        print("------------ Reading Corpora ------------", flush=True)
+   
     for author in tqdm(authors):
         docs = sorted([doc for doc in os.listdir(os.path.join(data_dir, author))])
         id_docs = [*id_docs, *[doc.replace(".txt", "") for doc in docs]]
@@ -218,7 +220,9 @@ if __name__ == "__main__":
     x_test = []
     x_mask_test = []
 
-    print("------------ Tokenizing Test Set ------------", flush=True)
+    if idr_torch.rank == 0:
+        print("------------ Tokenizing Test Set ------------", flush=True)
+    
     for doc, mask, _ in tqdm(test_set, total=len(doc_test)):
         x_test.append(doc)
         x_mask_test.append(mask)
@@ -230,7 +234,9 @@ if __name__ == "__main__":
     x_features = []
     y = []
 
-    print("------------ Tokenizing Train Set ------------", flush=True)
+    if idr_torch.rank == 0:
+        print("------------ Tokenizing Train Set ------------", flush=True)
+    
     for doc, mask, label, x_f in tqdm(training_set, total=len(doc_train)):
         x.extend(doc)
         x_mask.extend(mask)
@@ -242,7 +248,9 @@ if __name__ == "__main__":
 
     print("%d total samples with an average of %.2f samples per document.\n" % (len(x_mask), len(x_mask)/nd), flush=True)
 
-    print("------------ Building Pairs ------------", flush=True)
+    if idr_torch.rank == 0:
+        print("------------ Building Pairs ------------", flush=True)
+    
     data_pairs = []
     features_train = []
     labels = []
@@ -341,8 +349,12 @@ if __name__ == "__main__":
 
     def fit(epochs, model, loss_fn, opt, train_dl, x, x_mask, x_features, test_dl, aut_doc_test, features):
 
-        ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
+        if idr_torch.rank == 0:
+            ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
+        a_losses = 0
+        f_losses = 0
+        p_losses = 0
         for epoch in range(1,epochs+1):
             model.train()
             opt.zero_grad()
@@ -362,6 +374,10 @@ if __name__ == "__main__":
 
                 loss, f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
 
+                a_losses += a_loss
+                f_losses += f_loss
+                p_losses += p_loss
+
                 loss.backward()
                 if cliping==1:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
@@ -370,11 +386,12 @@ if __name__ == "__main__":
             if idr_torch.rank == 0:
                 ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
-            print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss, a_loss, p_loss, ce, lr), flush=True)
+                print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_losses, a_losses, p_losses, ce, lr), flush=True)
 
-    print("------------ Beginning Training ------------", flush=True)
+    if idr_torch.rank == 0:
+        print("------------ Beginning Training ------------", flush=True)
 
-    if not os.path.isdir(os.path.join("results",method)):
-        os.mkdir(os.path.join("results",method))
+        if not os.path.isdir(os.path.join("results",method)):
+            os.mkdir(os.path.join("results",method))
 
     fit(EPOCHS, model, criterion, optimizer, train_dl, x, x_mask, x_features, test_dl, aut_doc_test[doc_tp,:], features)
