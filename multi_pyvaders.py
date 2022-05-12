@@ -116,6 +116,15 @@ class book_Dataset(Dataset):
 
 if __name__ == "__main__":
 
+    NODE_ID = os.environ['SLURM_NODEID']
+    MASTER_ADDR = os.environ['MASTER_ADDR']
+
+    # display info
+    if idr_torch.rank == 0:
+        print(">>> Training on ", len(idr_torch.hostnames), " nodes and ", idr_torch.size, " processes, master node is ", MASTER_ADDR)
+    print("- Process {} corresponds to GPU {} of node {}".format(idr_torch.rank, idr_torch.local_rank, NODE_ID))
+
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dataset', type =str,
                         help='Path to dataset directory')
