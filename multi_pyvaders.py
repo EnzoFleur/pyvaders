@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler, normalize
 from sklearn.metrics import coverage_error,label_ranking_average_precision_score
 from tqdm import tqdm
 import numpy as np
-from random import sample
+from random import sample, shuffle
 import re
 import os
 import argparse
@@ -267,11 +267,12 @@ if __name__ == "__main__":
 
     train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset,
                                                                    num_replicas = idr_torch.size,
-                                                                   rank = idr_torch.rank)
+                                                                   rank = idr_torch.rank,
+                                                                   shuffle=True)
 
     train_dl = DataLoader(train_dataset,
                           batch_size = batch_size_per_gpu,
-                          shuffle = True,
+                          shuffle = False,
                           num_workers = 0,
                           pin_memory = True,
                           sampler = train_sampler)
