@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
     method = "pyvaders_%s" % name
 
-    authors = sorted([a for a in os.listdir(os.path.join(data_dir)) if os.path.isdir(os.path.join(data_dir, a))])[:20]
+    authors = sorted([a for a in os.listdir(os.path.join(data_dir)) if os.path.isdir(os.path.join(data_dir, a))])
     documents = []
     doc2aut = {}
     id_docs = []
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     if idr_torch.rank == 0:
         print("------------ Reading Corpora ------------", flush=True)
    
-    for author in tqdm(authors):
+    for author in authors:
         docs = sorted([doc for doc in os.listdir(os.path.join(data_dir, author))])
         id_docs = [*id_docs, *[doc.replace(".txt", "") for doc in docs]]
 
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     if idr_torch.rank == 0:
         print("------------ Tokenizing Test Set ------------", flush=True)
     
-    for doc, mask, _ in tqdm(test_set, total=len(doc_test)):
+    for doc, mask, _ in test_set:
         x_test.append(doc)
         x_mask_test.append(mask)
 
@@ -237,7 +237,7 @@ if __name__ == "__main__":
     if idr_torch.rank == 0:
         print("------------ Tokenizing Train Set ------------", flush=True)
     
-    for doc, mask, label, x_f in tqdm(training_set, total=len(doc_train)):
+    for doc, mask, label, x_f in training_set:
         x.extend(doc)
         x_mask.extend(mask)
         x_features.extend(x_f)
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     features_train = []
     labels = []
     doc_ids = [i for i in range(len(x))]
-    for d, a in tqdm(enumerate(y), total=len(y)):
+    for d, a in enumerate(y):
         data_pairs.append([d, a, d])
         labels.append([1,1])
 
@@ -310,7 +310,7 @@ if __name__ == "__main__":
             aut_vars = []
             aut_embeddings = []
 
-            for doc, mask, labels in tqdm(test_dl):
+            for doc, mask, labels in test_dl:
 
                 doc = torch.LongTensor(doc).to(device)
                 mask = torch.LongTensor(mask).to(device)
@@ -358,7 +358,7 @@ if __name__ == "__main__":
         for epoch in range(1,epochs+1):
             model.train()
             opt.zero_grad()
-            for x_train, y_train in tqdm(train_dl):
+            for x_train, y_train in train_dl:
                 
                 doc , author, doc_f = torch.tensor_split(x_train, 3, dim=1)
                 
