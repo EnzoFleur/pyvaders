@@ -352,12 +352,14 @@ if __name__ == "__main__":
         if idr_torch.rank == 0:
             ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
-        a_losses = 0
-        f_losses = 0
-        p_losses = 0
         for epoch in range(1,epochs+1):
             model.train()
             opt.zero_grad()
+
+            a_losses = 0
+            f_losses = 0
+            p_losses = 0
+
             for x_train, y_train in train_dl:
                 
                 doc , author, doc_f = torch.tensor_split(x_train, 3, dim=1)
