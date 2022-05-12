@@ -143,6 +143,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     data_dir = args.dataset
+    dataset = data_dir.split(os.sep)[-1]
     name=args.surname
     BATCH_SIZE = args.batchsize
     batch_size_per_gpu = BATCH_SIZE // idr_torch.size
@@ -197,7 +198,7 @@ if __name__ == "__main__":
     doc_tp = docid_test
     aut_doc_test = np.array(pd.crosstab(di2ai.keys(), di2ai.values()))
 
-    features = pd.read_csv(os.path.join("data", "gutenberg", "features", "features.csv"), sep=";").sort_values(by=["author", "id"])
+    features = pd.read_csv(os.path.join("data", dataset, "features", "features.csv"), sep=";").sort_values(by=["author", "id"])
 
     # features = features[features.author.isin(authors)]
 

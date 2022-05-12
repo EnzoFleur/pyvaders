@@ -125,6 +125,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     data_dir = args.dataset
+    dataset = data_dir.split(os.sep)[-1]
     name=args.surname
     BATCH_SIZE = args.batchsize
     EPOCHS = args.epochs

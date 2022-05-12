@@ -1,7 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import torch
-import transformers
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 import torch.nn as nn
 from transformers import DistilBertModel, DistilBertTokenizer
@@ -117,6 +116,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     data_dir = args.dataset
+    dataset = data_dir.split(os.sep)[-1]
     name=args.surname
     BATCH_SIZE = args.batchsize
     EPOCHS = args.epochs
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     print("Final coverage, precision with cosine similarity")
     print(str(round(ce,2)) + ", "+ str(round(lr,2)))
 
-    features = pd.read_csv(os.path.join("data", "gutenberg", "features", "features.csv"), sep=";")
+    features = pd.read_csv(os.path.join("data", dataset, "features", "features.csv"), sep=";")
 
     if not os.path.isdir(os.path.join("results",method)):
         os.mkdir(os.path.join("results",method))
