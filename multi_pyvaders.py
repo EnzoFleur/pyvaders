@@ -19,10 +19,19 @@ from pyencoders import VADER
 from regressor import style_embedding_evaluation
 from extractor import features_array_from_string
 
-# Setting up the device for GPU usage
+import idr_torch
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
 
-from torch import cuda
-device = 'cuda' if cuda.is_available() else 'cpu'
+dist.init_process_group(backend = 'nccl',
+                        init_method = 'env://',
+                        world_size=idr_torch.size,
+                        rank = idr_torch.rank)
+
+torch.cuda.set_device(idr_torch.local_rank)
+device = torch.device("cuda")
+
+# Setting up the device for GPU usage
 
 def chunks(*args, **kwargs):
 	return list(chunksYielder(*args, **kwargs))
@@ -127,6 +136,7 @@ if __name__ == "__main__":
     data_dir = args.dataset
     name=args.surname
     BATCH_SIZE = args.batchsize
+    batch_size_per_gpu = BATCH_SIZE // idr_torch.size
     EPOCHS = args.epochs
     NEGPAIRS = args.negpairs
     LEARNING_RATE = args.learningrate
@@ -243,24 +253,35 @@ if __name__ == "__main__":
 
     print("%d training pairs created.\n" % len(labels), flush=True)
 
-    train_dl = DataLoader(TensorDataset(torch.LongTensor(data_pairs),
-                                        torch.tensor(labels, dtype=torch.float32)),
-                                        shuffle=True, batch_size = BATCH_SIZE)
+    train_dataset = TensorDataset(torch.LongTensor(data_pairs),
+                                  torch.tensor(labels, dtype=torch.float32))
+
+    train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset,
+                                                                   num_replicas = idr_torch.size,
+                                                                   rank = idr_torch.rank)
+
+    train_dl = DataLoader(train_dataset,
+                          batch_size = batch_size_per_gpu,
+                          shuffle = True,
+                          num_workers = 0,
+                          pin_memory = True,
+                          sampler = train_sampler)
 
     x = torch.LongTensor(x)
     x_mask = torch.LongTensor(x_mask)
     x_features = torch.tensor(x_features, dtype=torch.float32)
 
     model = VADER(na, 300, L=10)
+    model.to(device)
+
+    ddp_model = DDP(model, device_ids=[idr_torch.local_rank])
 
     # for param in model.encoder.parameters():
     #     param.requires_grad = False
 
-    model.to(device)
-
     criterion = nn.BCEWithLogitsLoss()
 
-    optimizer = torch.optim.Adam(params = model.parameters(), lr = LEARNING_RATE)
+    optimizer = torch.optim.Adam(params = ddp_model.parameters(), lr = LEARNING_RATE)
 
     def eval_fn(test_dl, aut_doc_test, model, features):
         
@@ -323,11 +344,11 @@ if __name__ == "__main__":
                 doc = x[doc.squeeze()]
                 doc_f = x_features[doc_f.squeeze()]
 
-                doc = doc.to(device)
-                mask = mask.to(device)
-                doc_f = doc_f.to(device)
-                author = author.to(device)
-                y_train= y_train.to(device)
+                doc = doc.to(device, non_blocking = True)
+                mask = mask.to(device, non_blocking = True)
+                doc_f = doc_f.to(device, non_blocking = True)
+                author = author.to(device, non_blocking = True)
+                y_train= y_train.to(device, non_blocking = True)
 
                 loss, f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
 
@@ -336,7 +357,8 @@ if __name__ == "__main__":
                     torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
 
-            ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
+            if idr_torch.rank == 0:
+                ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
             print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss, a_loss, p_loss, ce, lr), flush=True)
 
