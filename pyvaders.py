@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler, normalize
 from sklearn.metrics import coverage_error,label_ranking_average_precision_score
 from tqdm import tqdm
 import numpy as np
-from random import sample
+from random import sample, seed
 import re
 import os
 import argparse
@@ -38,6 +38,9 @@ BERT_START_INDEX = 101
 BERT_END_INDEX = 102
 
 tokenizer = DistilBertTokenizer.from_pretrained(DISTILBERT_PATH, do_lower_case=True, local_files_only=True)
+
+np.random.seed(13)
+seed(13)
 
 ############# Text Reader ###############
 def clean_str(string):
@@ -177,7 +180,7 @@ if __name__ == "__main__":
     doc_tp = docid_test
     aut_doc_test = np.array(pd.crosstab(di2ai.keys(), di2ai.values()))
 
-    features = pd.read_csv(os.path.join("data", "gutenberg", "features", "features.csv"), sep=";").sort_values(by=["author", "id"])
+    features = pd.read_csv(os.path.join("data", dataset, "features", "features.csv"), sep=";").sort_values(by=["author", "id"])
 
     # features = features[features.author.isin(authors)]
 
@@ -281,9 +284,9 @@ if __name__ == "__main__":
                 doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
             ll = [i for i in range(model.na)]
-            for i in range(0, model.na, BATCH_SIZE):
+            for i in range(0, model.na, 32):
 
-                ids = torch.LongTensor(ll[i:i+BATCH_SIZE]).to(device)
+                ids = torch.LongTensor(ll[i:i+32]).to(device)
                 aut_embeddings.append(model.mean_author(ids).cpu().detach().numpy())
                 aut_vars.append(model.logvar_author(ids).cpu().detach().numpy())
 

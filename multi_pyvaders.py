@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler, normalize
 from sklearn.metrics import coverage_error,label_ranking_average_precision_score
 from tqdm import tqdm
 import numpy as np
-from random import sample, shuffle
+from random import sample, seed
 import re
 import os
 import argparse
@@ -47,6 +47,9 @@ BERT_START_INDEX = 101
 BERT_END_INDEX = 102
 
 tokenizer = DistilBertTokenizer.from_pretrained(DISTILBERT_PATH, do_lower_case=True, local_files_only=True)
+
+np.random.seed(13)
+seed(13)
 
 ############# Text Reader ###############
 def clean_str(string):
@@ -192,7 +195,7 @@ if __name__ == "__main__":
 
     di2ai = {doc2id[d]: aut2id[a] for d,a in doc2aut.items()}
 
-    doc_train, doc_test, docid_train, docid_test, y_train, y_test = train_test_split(documents, list(doc2id.values()), list(di2ai.values()), test_size=0.2, stratify=list(di2ai.values()))
+    doc_train, doc_test, docid_train, docid_test, y_train, y_test = train_test_split(documents, list(doc2id.values()), list(di2ai.values()), test_size=0.2, stratify=list(di2ai.values()), random_state=13)
 
     # For testing purpose
     doc_tp = docid_test
@@ -320,9 +323,9 @@ if __name__ == "__main__":
                 doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
             ll = [i for i in range(model.na)]
-            for i in range(0, model.na, BATCH_SIZE):
+            for i in range(0, model.na, 32):
 
-                ids = torch.LongTensor(ll[i:i+BATCH_SIZE]).to(device)
+                ids = torch.LongTensor(ll[i:i+32]).to(device)
                 aut_embeddings.append(model.mean_author(ids).cpu().detach().numpy())
                 aut_vars.append(model.logvar_author(ids).cpu().detach().numpy())
 
