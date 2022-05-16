@@ -144,6 +144,8 @@ if __name__ == "__main__":
                         help='Number of negative pairs to sample')
     parser.add_argument('-lr','--learningrate', default=1e-3, type=float,
                         help='Learning rate')
+    parser.add_argument('-t','--test', default=0, type=int,
+                        help='test')
     args = parser.parse_args()
 
     data_dir = args.dataset
@@ -154,6 +156,7 @@ if __name__ == "__main__":
     EPOCHS = args.epochs
     NEGPAIRS = args.negpairs
     LEARNING_RATE = args.learningrate
+    test = args.test
     
     MAX_LEN = 512
     CLIPNORM =  1.0
@@ -171,6 +174,9 @@ if __name__ == "__main__":
     print("Random init is : %f" % torch.rand(1), flush=True)
 
     authors = sorted([a for a in os.listdir(os.path.join(data_dir)) if os.path.isdir(os.path.join(data_dir, a))])
+    if test==1:
+        authors = authors[:10]
+
     documents = []
     doc2aut = {}
     id_docs = []
