@@ -350,7 +350,7 @@ if __name__ == "__main__":
         print("coverage, precision", flush=True)
         print(str(round(ce,2)) + ", "+ str(round(lr,2)))
 
-        res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index(), n_fold=10)
+        res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index().sort_values("author"), n_fold=10)
         print(res_df)
 
         np.save(os.path.join("results", method, "aut_%s.npy" % method), aut_embeddings)
