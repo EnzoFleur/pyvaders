@@ -39,8 +39,11 @@ BERT_END_INDEX = 102
 
 tokenizer = DistilBertTokenizer.from_pretrained(DISTILBERT_PATH, do_lower_case=True, local_files_only=True)
 
-np.random.seed(13)
-seed(13)
+def set_seed(graine):
+    seed(graine)
+    np.random.seed(graine)
+    torch.manual_seed(graine)
+    torch.cuda.manual_seed_all(graine)
 
 ############# Text Reader ###############
 def clean_str(string):
@@ -123,8 +126,6 @@ if __name__ == "__main__":
                         help='Number of negative pairs to sample')
     parser.add_argument('-lr','--learningrate', default=1e-3, type=float,
                         help='Learning rate')
-    parser.add_argument('-c','--cliping', default=0, type=int,
-                        help='cliping')
     args = parser.parse_args()
 
     data_dir = args.dataset
@@ -134,7 +135,6 @@ if __name__ == "__main__":
     EPOCHS = args.epochs
     NEGPAIRS = args.negpairs
     LEARNING_RATE = args.learningrate
-    cliping = args.cliping
     
     MAX_LEN = 512
     CLIPNORM =  1.0
@@ -147,6 +147,8 @@ if __name__ == "__main__":
     # name="poutou"
 
     method = "pyvaders_%s" % name
+
+    set_seed(13)
 
     authors = sorted([a for a in os.listdir(os.path.join(data_dir)) if os.path.isdir(os.path.join(data_dir, a))])
     documents = []
@@ -319,6 +321,11 @@ if __name__ == "__main__":
         for epoch in range(1,epochs+1):
             model.train()
             opt.zero_grad()
+
+            a_losses = 0
+            f_losses = 0
+            p_losses = 0
+            
             for x_train, y_train in tqdm(train_dl):
                 
                 doc , author, doc_f = torch.tensor_split(x_train, 3, dim=1)
@@ -335,12 +342,16 @@ if __name__ == "__main__":
 
                 loss, f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
 
+                a_losses += a_loss
+                f_losses += f_loss
+                p_losses += p_loss
+
                 loss.backward()
-                if cliping==1:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
 
-            ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
+            if (epoch % 5 == 0):
+                ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
             print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss, a_loss, p_loss, ce, lr), flush=True)
 
