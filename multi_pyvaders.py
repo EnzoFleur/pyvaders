@@ -400,6 +400,7 @@ if __name__ == "__main__":
             if (idr_torch.rank == 0) & (epoch % 5 == 0):
                 ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
+            if (idr_torch.rank == 0):
                 print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_losses, a_losses, p_losses, ce, lr), flush=True)
 
     if idr_torch.rank == 0:
