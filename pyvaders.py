@@ -293,9 +293,9 @@ if __name__ == "__main__":
                 doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
             ll = [i for i in range(model.na)]
-            for i in range(0, model.na, 32):
+            for i in range(0, model.na, BATCH_SIZE):
 
-                ids = torch.LongTensor(ll[i:i+32]).to(device)
+                ids = torch.LongTensor(ll[i:i+BATCH_SIZE]).to(device)
                 aut_embeddings.append(model.mean_author(ids).cpu().detach().numpy())
                 aut_vars.append(model.logvar_author(ids).cpu().detach().numpy())
 
@@ -328,10 +328,6 @@ if __name__ == "__main__":
         for epoch in range(1,epochs+1):
             model.train()
             opt.zero_grad()
-
-            a_losses = 0
-            f_losses = 0
-            p_losses = 0
             
             for x_train, y_train in tqdm(train_dl):
                 
@@ -348,10 +344,6 @@ if __name__ == "__main__":
                 y_train= y_train.to(device)
 
                 loss, f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
-
-                a_losses += a_loss
-                f_losses += f_loss
-                p_losses += p_loss
 
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)

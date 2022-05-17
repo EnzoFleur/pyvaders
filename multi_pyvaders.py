@@ -369,10 +369,6 @@ if __name__ == "__main__":
             model.train()
             opt.zero_grad()
 
-            a_losses = 0
-            f_losses = 0
-            p_losses = 0
-
             for x_train, y_train in train_dl:
                 
                 doc , author, doc_f = torch.tensor_split(x_train, 3, dim=1)
@@ -389,10 +385,6 @@ if __name__ == "__main__":
 
                 loss, f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
 
-                a_losses += a_loss
-                f_losses += f_loss
-                p_losses += p_loss
-
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
@@ -401,7 +393,7 @@ if __name__ == "__main__":
                 ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
             if (idr_torch.rank == 0):
-                print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_losses, a_losses, p_losses, ce, lr), flush=True)
+                print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss, a_loss, p_loss, ce, lr), flush=True)
 
     if idr_torch.rank == 0:
         print("------------ Beginning Training ------------", flush=True)
