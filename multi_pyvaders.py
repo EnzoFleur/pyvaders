@@ -314,7 +314,7 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(params = ddp_model.parameters(), lr = LEARNING_RATE)
 
-    def eval_fn(test_dl, aut_doc_test, model, features):
+    def eval_fn(test_dl, aut_doc_test, model, features, style=True):
         
         model.eval()
         with torch.no_grad():
@@ -350,14 +350,15 @@ if __name__ == "__main__":
         print("coverage, precision", flush=True)
         print(str(round(ce,2)) + ", "+ str(round(lr,2)))
 
-        res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index().sort_values("author"), n_fold=10)
-        print(res_df)
-
+        if style:
+            res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index().sort_values("author"), n_fold=10)
+            print(res_df)
+            res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
+    
         np.save(os.path.join("results", method, "aut_%s.npy" % method), aut_embeddings)
         np.save(os.path.join("results", method, "aut_var_%s.npy" % method), aut_vars)
         np.save(os.path.join("results", method, "doc_%s.npy" % method), doc_embeddings)
-        res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
-    
+        
         return ce, lr
 
     def fit(epochs, model, loss_fn, opt, train_dl, x, x_mask, x_features, test_dl, aut_doc_test, features):
@@ -389,10 +390,8 @@ if __name__ == "__main__":
                 torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
 
-            if ((idr_torch.rank == 0) & (epoch % 5 == 0)):
-                ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
-
             if (idr_torch.rank == 0):
+                ce, lr = eval_fn(test_dl, aut_doc_test, model, features, style=(epoch%5 == 0))
                 print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss, a_loss, p_loss, ce, lr), flush=True)
 
     if idr_torch.rank == 0:

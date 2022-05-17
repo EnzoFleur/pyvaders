@@ -275,7 +275,7 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(params = model.parameters(), lr = LEARNING_RATE)
 
-    def eval_fn(test_dl, aut_doc_test, model, features):
+    def eval_fn(test_dl, aut_doc_test, model, features, style=True):
         
         model.eval()
         with torch.no_grad():
@@ -311,14 +311,15 @@ if __name__ == "__main__":
         print("coverage, precision", flush=True)
         print(str(round(ce,2)) + ", "+ str(round(lr,2)))
 
-        res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index(), n_fold=10)
-        print(res_df)
+        if style:
+            res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index(), n_fold=10)
+            print(res_df)
+            res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
 
         np.save(os.path.join("results", method, "aut_%s.npy" % method), aut_embeddings)
         np.save(os.path.join("results", method, "aut_var_%s.npy" % method), aut_vars)
         np.save(os.path.join("results", method, "doc_%s.npy" % method), doc_embeddings)
-        res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
-    
+        
         return ce, lr
 
     def fit(epochs, model, loss_fn, opt, train_dl, x, x_mask, x_features, test_dl, aut_doc_test, features):
