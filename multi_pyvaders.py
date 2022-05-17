@@ -332,9 +332,9 @@ if __name__ == "__main__":
                 doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
             ll = [i for i in range(model.na)]
-            for i in range(0, model.na, 32):
+            for i in range(0, model.na, batch_size_per_gpu):
 
-                ids = torch.LongTensor(ll[i:i+32]).to(device)
+                ids = torch.LongTensor(ll[i:i+batch_size_per_gpu]).to(device)
                 aut_embeddings.append(model.mean_author(ids).cpu().detach().numpy())
                 aut_vars.append(model.logvar_author(ids).cpu().detach().numpy())
 
@@ -389,7 +389,7 @@ if __name__ == "__main__":
                 torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
 
-            if (idr_torch.rank == 0) & (epoch % 5 == 0):
+            if ((idr_torch.rank == 0) & (epoch % 5 == 0)):
                 ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
 
             if (idr_torch.rank == 0):
