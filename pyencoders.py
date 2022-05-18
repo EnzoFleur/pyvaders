@@ -45,15 +45,12 @@ class MLP(torch.nn.Module):
 
             self.bn = torch.nn.BatchNorm1d(input_size)
             self.do = torch.nn.Dropout(p=0.1)
-            self.fc1 = torch.nn.Linear(input_size, input_size)
-            self.tanh = torch.nn.Tanh()
-            self.fc2 = torch.nn.Linear(input_size, output_size)
+            self.fc1 = torch.nn.Linear(input_size, output_size)
         
         def forward(self, x):
-            x = self.fc1(self.do(x))
-            x = self.tanh(x)
+            x = x.mean(dim=1)
             x = self.bn(x)
-            x = self.fc2(self.do(x))
+            x = self.fc1(self.do(x))
             return x
 
 class VADER(torch.nn.Module):
@@ -74,8 +71,8 @@ class VADER(torch.nn.Module):
         self.a_features = torch.nn.Parameter(torch.rand(1))
         self.b_features = torch.nn.Parameter(torch.rand(1))
 
-        self.doc_mean = DAN(768, 512, self.doc_r)
-        self.doc_var = DAN(768, 512, self.doc_r)
+        self.doc_mean = MLP(768, self.doc_r)
+        self.doc_var = MLP(768, self.doc_r)
 
         self.mean_author = torch.nn.Embedding(self.na, self.doc_r)
         torch.nn.init.normal_(self.mean_author.weight, mean=0.0, std=1.0)
