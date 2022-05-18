@@ -350,8 +350,7 @@ if __name__ == "__main__":
                 torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 opt.step()
 
-            if (epoch % 5 == 0):
-                ce, lr = eval_fn(test_dl, aut_doc_test, model, features)
+            ce, lr = eval_fn(test_dl, aut_doc_test, model, features, style=(epoch%5 == 0))
 
             print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss, a_loss, p_loss, ce, lr), flush=True)
 

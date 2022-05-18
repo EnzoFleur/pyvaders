@@ -98,7 +98,7 @@ class book_Dataset(Dataset):
 
         parts = [[BERT_START_INDEX] + part + [BERT_END_INDEX] for part in parts]
 
-        if (len(parts) > 1) & (len(parts[-1]) < int(self.max_len * 0.3)):
+        if (len(parts) > 1) & (len(parts[-1]) < int(self.max_len * 0.05)):
             parts = parts[:-1]
 
         start=0
