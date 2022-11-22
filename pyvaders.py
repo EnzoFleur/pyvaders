@@ -328,7 +328,6 @@ if __name__ == "__main__":
 
         for epoch in range(1,epochs+1):
             model.train()
-            opt.zero_grad()
             
             for x_train, y_train in tqdm(train_dl):
                 
@@ -345,6 +344,8 @@ if __name__ == "__main__":
                 y_train= y_train.to(device)
 
                 loss, f_loss, a_loss, p_loss = model.loss_VIB(author, doc, mask, doc_f, y_train, loss_fn)
+
+                opt.zero_grad()
 
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
