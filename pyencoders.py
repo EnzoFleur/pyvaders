@@ -1,5 +1,6 @@
 import torch
-from transformers import DistilBertModel, DistilBertTokenizer
+import torch.nn as nn
+from transformers import DistilBertModel, BertModel
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 import torch.nn.functional as F
 import numpy as np
@@ -9,8 +10,9 @@ from torch import cuda
 device = 'cuda' if cuda.is_available() else 'cpu'
 
 DISTILBERT_PATH = os.path.join("..","distilBERT", "distilbert-base-uncased")
+BERT_PATH = os.path.join("..", "BERT", "bert-base_uncased")
 
-class DAN(torch.nn.Module):
+class DAN(nn.Module):
 
     def __init__(self, input_dim, hidden, r):
         super(DAN, self).__init__()
@@ -19,12 +21,12 @@ class DAN(torch.nn.Module):
         self.hidden = hidden
         self.r = r
 
-        self.do1 = torch.nn.Dropout(0.1)
-        self.bn1 = torch.nn.BatchNorm1d(input_dim)
-        self.fc1 = torch.nn.Linear(input_dim, hidden)
-        self.do2 = torch.nn.Dropout(0.1)
-        self.bn2 = torch.nn.BatchNorm1d(hidden)
-        self.fc2 = torch.nn.Linear(hidden, r)
+        self.do1 = nn.Dropout(0.1)
+        self.bn1 = nn.BatchNorm1d(input_dim)
+        self.fc1 = nn.Linear(input_dim, hidden)
+        self.do2 = nn.Dropout(0.1)
+        self.bn2 = nn.BatchNorm1d(hidden)
+        self.fc2 = nn.Linear(hidden, r)
 
     def forward(self, x):
 
@@ -39,22 +41,31 @@ class DAN(torch.nn.Module):
         return x
 
 
-class MLP(torch.nn.Module):
+class MLP(nn.Module):
         def __init__(self, input_size, output_size):
             super(MLP, self).__init__()
 
-            self.bn = torch.nn.BatchNorm1d(input_size)
-            self.do = torch.nn.Dropout(p=0.1)
-            self.fc1 = torch.nn.Linear(input_size, output_size)
+            self.input_size = input_size
+            self.output_size = output_size
+
+            self.mlp = nn.Sequential(*[
+                nn.Dropout(0.2),
+                nn.Linear(self.input_size, self.input_size),
+                nn.BatchNorm1d(),
+                nn.Tanh(),
+                nn.Dropout(0.2),
+                nn.Linear(self.input_size, self.output_size),
+                nn.BatchNorm1d(),
+            ])
         
         def forward(self, x):
-            x = x.mean(dim=1)
-            x = self.bn(x)
-            x = self.fc1(self.do(x))
+
+            x = self.mlp(x)
+
             return x
 
-class VADER(torch.nn.Module):
-    def __init__(self, na, doc_r, beta=1e-12, alpha=1/2, L=1):
+class VADER(nn.Module):
+    def __init__(self, na, doc_r, encoder, beta=1e-12, alpha=1/2, L=1):
         super(VADER, self).__init__()
         self.na = na
         self.beta = beta
@@ -62,23 +73,27 @@ class VADER(torch.nn.Module):
         self.doc_r = doc_r
         self.alpha = alpha
 
-        self.drop = torch.nn.Dropout(0.1)
+        self.drop = nn.Dropout(0.1)
 
-        self.encoder = DistilBertModel.from_pretrained(DISTILBERT_PATH)
-        self.a_authors = torch.nn.Parameter(torch.rand(1))
-        self.b_authors = torch.nn.Parameter(torch.rand(1))
+        if encoder=="DistilBERT":
+            self.encoder = DistilBertModel.from_pretrained(DISTILBERT_PATH)
+        elif encoder=="BERT":
+            self.encoder = BertModel.from_pretrained(BERT_PATH)
 
-        self.a_features = torch.nn.Parameter(torch.rand(1))
-        self.b_features = torch.nn.Parameter(torch.rand(1))
+        self.a_authors = nn.Parameter(torch.rand(1))
+        self.b_authors = nn.Parameter(torch.rand(1))
+
+        self.a_features = nn.Parameter(torch.rand(1))
+        self.b_features = nn.Parameter(torch.rand(1))
 
         self.doc_mean = MLP(768, self.doc_r)
         self.doc_var = MLP(768, self.doc_r)
 
-        self.mean_author = torch.nn.Embedding(self.na, self.doc_r)
-        torch.nn.init.normal_(self.mean_author.weight, mean=0.0, std=1.0)
+        self.mean_author = nn.Embedding(self.na, self.doc_r)
+        nn.init.normal_(self.mean_author.weight, mean=0.0, std=1.0)
         
-        self.logvar_author = torch.nn.Embedding(self.na, self.doc_r)
-        torch.nn.init.uniform_(self.logvar_author.weight, a=-0.5, b=0.5)
+        self.logvar_author = nn.Embedding(self.na, self.doc_r)
+        nn.init.uniform_(self.logvar_author.weight, a=-0.5, b=0.5)
 
     def reparameterize(self, mean, logvar):
         
@@ -106,34 +121,38 @@ class VADER(torch.nn.Module):
 
         return logits
 
+    def compute_masked_means(self, outputs, masks):
+        # we don't want to include padding tokens
+        # outputs : B x T x D
+        # masks   : B x T
+        dim = outputs.size(2)
+        masks_dim = masks.unsqueeze(2).repeat(1, 1, dim)
+        # masked_outputs : B x T x D
+        masked_outputs = outputs * masks_dim  # makes the masked entries 0
+        # masked_outputs: B x D / B x 1 => B x D
+        partition = torch.sum(masks, dim=1, keepdim=True)
+        masked_outputs = torch.sum(masked_outputs, dim=1) / partition
+        
+        return masked_outputs
+
     def forward(self, ids, mask):
         
-        distilbert_output = self.encoder(ids, mask)
-        hidden_state = distilbert_output[0]
-        # doc_emb = hidden_state[:,0]
+        encoder_output = self.encoder(input_ids=ids, attention_mask=mask)
+        hidden_state = encoder_output[0]
+
+        hidden_state = self.compute_masked_means(hidden_state, mask)
         
         doc_mean = self.doc_mean(hidden_state)
         doc_var = self.doc_var(hidden_state)
 
         return doc_mean, doc_var
 
-    def loss_VIB(self, authors, doc, mask, features, y, criterion):
+    def loss_VIB(self, authors, ids, mask, features, y_authors, y_features, criterion):
 
-        y_authors, y_features = torch.tensor_split(y, 2, dim=1)
-        y_authors = y_authors.squeeze()
-        y_features = y_features.squeeze()
+        doc_mean, doc_var = self(ids, mask)
 
-        # distilbert_output = self.encoder(doc, mask)
-        # hidden_state = distilbert_output[0]
-        # doc_emb = self.drop(hidden_state[:,0])
-
-        # doc_mean = self.doc_mean(doc_emb)
-        # doc_var = self.doc_var(doc_emb)
-
-        doc_mean, doc_var = self(doc, mask)
-
-        author_mean = self.mean_author(authors).squeeze()
-        author_logvar = self.logvar_author(authors).squeeze()
+        author_mean = self.mean_author(authors)
+        author_logvar = self.logvar_author(authors)
 
         author_loss = 0
         feature_loss = 0
@@ -164,13 +183,13 @@ class VADER(torch.nn.Module):
 
         return loss, feature_loss.item(), author_loss.item(), prior_loss.item()
 
-class DeepStyle(torch.nn.Module):
+class DeepStyle(nn.Module):
     def __init__(self, na):
         super(DeepStyle, self).__init__()
         self.na = na
         self.distilBERT = DistilBertModel.from_pretrained(DISTILBERT_PATH)
-        self.drop = torch.nn.Dropout(0.1)
-        self.out = torch.nn.Linear(768, na)
+        self.drop = nn.Dropout(0.1)
+        self.out = nn.Linear(768, na)
 
     def forward(self, ids, mask):
         distilbert_output = self.distilBERT(ids, mask)
