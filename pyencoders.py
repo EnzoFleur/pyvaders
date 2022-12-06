@@ -10,7 +10,7 @@ from torch import cuda
 device = 'cuda' if cuda.is_available() else 'cpu'
 
 DISTILBERT_PATH = os.path.join("..","distilBERT", "distilbert-base-uncased")
-BERT_PATH = os.path.join("..", "BERT", "bert-base_uncased")
+BERT_PATH = os.path.join("..", "BERT", "bert-base-uncased")
 
 class DAN(nn.Module):
 
