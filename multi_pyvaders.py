@@ -169,8 +169,6 @@ if __name__ == "__main__":
         y_score = normalize( dd @ aa.transpose(),norm="l1")
         ce = coverage_error(test_dataset.aut_doc_test, y_score)/test_dataset.na*100
         lr = label_ranking_average_precision_score(test_dataset.aut_doc_test, y_score)*100
-        print("coverage, precision", flush=True)
-        print(str(round(ce,2)) + ", "+ str(round(lr,2)))
 
         if style:
             res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index(), n_fold=10)
@@ -212,7 +210,7 @@ if __name__ == "__main__":
 
             if (idr_torch.rank == 0):
 
-                ce, lr = eval_fn(test_dataset, model, features, style=(epoch%5 == 0))
+                ce, lr = eval_fn(test_dataset, model, features, style=(epoch%2 == 0))
 
                 print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss, a_loss, p_loss, ce, lr), flush=True)
 
