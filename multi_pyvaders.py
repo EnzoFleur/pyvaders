@@ -155,12 +155,12 @@ if __name__ == "__main__":
                 doc_emb, _ = model(input_ids, attention_masks)
                 doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
-            ll = [i for i in range(model.na)]
-            for i in range(0, model.na, BATCH_SIZE):
+            ll = [i for i in range(model.module.na)]
+            for i in range(0, model.module.na, BATCH_SIZE):
 
                 ids = torch.LongTensor(ll[i:i+BATCH_SIZE]).to(device)
-                aut_embeddings.append(model.mean_author(ids).cpu().detach().numpy())
-                aut_vars.append(model.logvar_author(ids).cpu().detach().numpy())
+                aut_embeddings.append(model.module.mean_author(ids).cpu().detach().numpy())
+                aut_vars.append(model.module.logvar_author(ids).cpu().detach().numpy())
 
         doc_embeddings = np.vstack(doc_embeddings)
         aut_embeddings = np.vstack(aut_embeddings)
@@ -204,7 +204,7 @@ if __name__ == "__main__":
                 y_a = y_a.to(device)
                 y_f = y_f.to(device)
 
-                loss, f_loss, a_loss, p_loss = model.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
+                loss, f_loss, a_loss, p_loss = model.module.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
 
                 opt.zero_grad()
 
