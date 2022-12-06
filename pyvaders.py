@@ -76,15 +76,15 @@ if __name__ == "__main__":
 
     features = pd.read_csv(os.path.join("data", dataset, "features", "features.csv"), sep=";").sort_values(by=["author", "id"])
 
+    features = features.drop(["id", 'needn\'t', 'couldn\'t', 'hasn\'t', 'mightn\'t', 'you\'ve', 'shan\'t', 'aren',
+        'weren\'t', 'mustn', 'shan', 'should\'ve', 'mightn', 'needn', 'hadn\'t',
+        'aren\'t', 'hadn', 'that\'ll', '£', '€', '<', '\'', '^', '~'], axis=1)
+
     columns = features.drop(["author"], axis=1).columns
 
     dataset_train = BookDataset(data_dir, encoder = "DistilBERT", train=True, columns = columns, max_len = 512, seed = 42)
 
     features = features[features.author.isin(dataset_train.authors)]
-
-    features = features.drop(["id", 'needn\'t', 'couldn\'t', 'hasn\'t', 'mightn\'t', 'you\'ve', 'shan\'t', 'aren',
-        'weren\'t', 'mustn', 'shan', 'should\'ve', 'mightn', 'needn', 'hadn\'t',
-        'aren\'t', 'hadn', 'that\'ll', '£', '€', '<', '\'', '^', '~'], axis=1)
     
     stdScale = StandardScaler()
     stdScale.fit(features.drop(["author"], axis=1))
