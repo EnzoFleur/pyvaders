@@ -169,8 +169,8 @@ class VADER(nn.Module):
 
             author_probs = self.logistic_classifier(distance, apply_sigmoid=False)
 
-            author_loss += criterion(author_probs, y_authors)
-            feature_loss += criterion(features_probs, y_features)
+            author_loss += criterion(author_probs, y_authors.float())
+            feature_loss += criterion(features_probs, y_features.float())
 
         prior_loss += 0.5 * torch.sum(torch.square(author_mean) + torch.exp(author_logvar) - author_logvar -1)
         prior_loss += 0.5 * torch.sum(torch.square(doc_mean) + torch.exp(doc_var) - doc_var -1)

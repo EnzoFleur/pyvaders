@@ -68,6 +68,8 @@ if __name__ == "__main__":
     # NEGPAIRS=5
     # name="poutou"
     # dataset = data_dir.split(os.sep)[-1]
+    # ALPHA = 0.5
+    # ENCODER = "DistilBERT"
 
     method = "pyvaders_%s" % name
 
