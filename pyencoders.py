@@ -51,11 +51,11 @@ class MLP(nn.Module):
             self.mlp = nn.Sequential(*[
                 nn.Dropout(0.2),
                 nn.Linear(self.input_size, self.input_size),
-                nn.BatchNorm1d(),
+                nn.BatchNorm1d(self.input_size),
                 nn.Tanh(),
                 nn.Dropout(0.2),
                 nn.Linear(self.input_size, self.output_size),
-                nn.BatchNorm1d(),
+                nn.BatchNorm1d(self.output_size),
             ])
         
         def forward(self, x):

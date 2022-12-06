@@ -60,8 +60,10 @@ if __name__ == "__main__":
                         help='Number of negative pairs to sample')
     parser.add_argument('-lr','--learningrate', default=1e-3, type=float,
                         help='Learning rate')
-    parser.add_argument('-t','--test', default=0, type=int,
-                        help='test')
+    parser.add_argument('-e','--encoder', default="DistilBERT", type=str,
+                        help='Text encoder')
+    parser.add_argument('-a','--alpha', default=1/2, type=float,
+                        help='Alpha parameter value')
     args = parser.parse_args()
 
     data_dir = args.dataset
@@ -72,10 +74,11 @@ if __name__ == "__main__":
     EPOCHS = args.epochs
     NEGPAIRS = args.negpairs
     LEARNING_RATE = args.learningrate
-    test = args.test
-    
+    ENCODER = args.encoder
+    ALPHA = args.alpha
+
     MAX_LEN = 512
-    CLIPNORM =  1.0
+    # CLIPNORM =  1.0
 
     # LEARNING_RATE = 5e-5
     # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\gutenberg"
@@ -91,25 +94,26 @@ if __name__ == "__main__":
 
     features = pd.read_csv(os.path.join("data", dataset, "features", "features.csv"), sep=";").sort_values(by=["author", "id"])
 
-    features = features.drop(["id", "author", 'needn\'t', 'couldn\'t', 'hasn\'t', 'mightn\'t', 'you\'ve', 'shan\'t', 'aren',
-        'weren\'t', 'mustn', 'shan', 'should\'ve', 'mightn', 'needn', 'hadn\'t',
-        'aren\'t', 'hadn', 'that\'ll', '£', '€', '<', '\'', '^', '~'], axis=1)
-
-    columns = features.columns
-
-    features = features.to_numpy()
-    
-    stdScale = StandardScaler()
-    stdScale.fit(features)
+    columns = features.drop(["author"], axis=1).columns
 
     dataset_train = BookDataset(data_dir, encoder = "DistilBERT", train=True, columns = columns, max_len = 512, seed = 13)
+
+    features = features[features.author.isin(dataset_train.authors)]
+
+    features = features.drop(["id", 'needn\'t', 'couldn\'t', 'hasn\'t', 'mightn\'t', 'you\'ve', 'shan\'t', 'aren',
+        'weren\'t', 'mustn', 'shan', 'should\'ve', 'mightn', 'needn', 'hadn\'t',
+        'aren\'t', 'hadn', 'that\'ll', '£', '€', '<', '\'', '^', '~'], axis=1)
+    
+    stdScale = StandardScaler()
+    stdScale.fit(features.drop(["author"], axis=1))
+
     dataset_train._process_train_data()
 
     dataset_train.features = stdScale.transform(dataset_train.features)
 
     dataset_train._negative_sample(negpairs=NEGPAIRS)
 
-    dataset_test = BookDataset(data_dir, encoder = "DistilBERT", train=False, columns = columns, max_len = 512, seed = 13)
+    dataset_test = BookDataset(data_dir, encoder = "DistilBERT", train=False, columns = columns, max_len = 512, seed = 42)
     dataset_test._process_test_data()
 
     train_dl = DataLoader(dataset_train, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
@@ -126,7 +130,7 @@ if __name__ == "__main__":
                           pin_memory = True,
                           sampler = train_sampler)
 
-    model = VADER(dataset_train.na, 300, "DistilBERT", L=10)
+    model = VADER(na=dataset_train.na, doc_r=300, encoder=ENCODER, L=10, alpha=ALPHA)
     model.to(device)
 
     ddp_model = DDP(model, device_ids=[idr_torch.local_rank])
