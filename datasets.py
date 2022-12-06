@@ -152,6 +152,8 @@ class BookDataset(Dataset):
                     self.features.append(features_array_from_string(" ".join(temp), self.columns))
                     self.author_chunks.append(self.aut2id[author])
 
+        self.documents = []
+
     def _process_test_data(self):
         print("------------ Processing Test Corpora ------------", flush=True)
         self.texts = []
@@ -187,6 +189,8 @@ class BookDataset(Dataset):
 
         self.aut_doc_test = np.zeros((self.nd, self.na))
         self.aut_doc_test[[i for i in range(self.nd)],[self.aut2id[author] for author in self.author_documents]] = 1
+
+        self.documents = []
 
     def _negative_sample(self, negpairs=10):
         print("------------ Building Pairs ------------", flush=True)
