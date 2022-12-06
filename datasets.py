@@ -133,10 +133,24 @@ class BookDataset(Dataset):
                    doc_ids += sentence_ids
                    temp += [sentence]
 
-            if (len(temp)>0)&(len(" ".join(temp))>50):
-                self.texts.append(" ".join(temp))
-                self.features.append(features_array_from_string(" ".join(temp), self.columns))
-                self.author_chunks.append(self.aut2id[author])
+            if l>510:
+                if (len(temp)>0)&(len(" ".join(temp))>50):
+                    self.texts.append(" ".join(temp))
+                    self.features.append(features_array_from_string(" ".join(temp), self.columns))
+                    self.author_chunks.append(self.aut2id[author])
+                else:
+                    text1, text2 = sentence[:len(sentence)//2], sentence[len(sentence)//2:]
+                    self.texts.append(text1)
+                    self.features.append(features_array_from_string(text1, self.columns))
+                    self.author_chunks.append(self.aut2id[author])
+                    self.texts.append(text2)
+                    self.features.append(features_array_from_string(text2, self.columns))
+                    self.author_chunks.append(self.aut2id[author])
+            else:
+                if (len(temp)>0)&(len(" ".join(temp))>50):
+                    self.texts.append(" ".join(temp))
+                    self.features.append(features_array_from_string(" ".join(temp), self.columns))
+                    self.author_chunks.append(self.aut2id[author])
 
     def _process_test_data(self):
         print("------------ Processing Test Corpora ------------", flush=True)
@@ -212,7 +226,7 @@ class BookDataset(Dataset):
 
     def tokenize_caption(self, caption, device):
 
-        output = self.tokenizer(caption, padding=True, return_tensors='pt')
+        output = self.tokenizer(caption, padding=True, truncation=True, max_length=512, return_tensors='pt')
 
         input_ids = output['input_ids']
         attention_mask = output['attention_mask']
