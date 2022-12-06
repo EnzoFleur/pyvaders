@@ -10,6 +10,7 @@ from random import sample, seed
 import re
 import os
 import argparse
+from datetime import datetime
 
 from pyencoders import VADER
 from datasets import BookDataset
@@ -99,7 +100,7 @@ if __name__ == "__main__":
         'aren\'t', 'hadn', 'that\'ll', '£', '€', '<', '\'', '^', '~'], axis=1)
 
     columns = features.drop(["author"], axis=1).columns
-
+    
     dataset_train = BookDataset(data_dir, encoder = "DistilBERT", train=True, columns = columns, max_len = 512, seed = 42)
 
     # features = features[features.author.isin(dataset_train.authors)]
@@ -189,7 +190,9 @@ if __name__ == "__main__":
         for epoch in range(1,epochs+1):
             model.train()
             
-            for batch in tqdm(train_dl):
+            if idr_torch.rank == 0: start = datetime.now()
+
+            for batch in train_dl:
                 
                 author, doc, doc_f, y_a, y_f = batch.values()
 
@@ -212,7 +215,7 @@ if __name__ == "__main__":
 
                 ce, lr = eval_fn(test_dataset, model, features, style=(epoch%2 == 0))
 
-                print("[%d/%d]  F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, f_loss, a_loss, p_loss, ce, lr), flush=True)
+                print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
 
 
     if (idr_torch.rank == 0):
