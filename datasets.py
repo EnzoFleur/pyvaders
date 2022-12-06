@@ -133,9 +133,10 @@ class BookDataset(Dataset):
                    doc_ids += sentence_ids
                    temp += [sentence]
 
-            self.texts.append(" ".join(temp))
-            self.features.append(features_array_from_string(" ".join(temp), self.columns))
-            self.author_chunks.append(self.aut2id[author])
+            if (len(temp)>0)&(len(" ".join(temp))>50):
+                self.texts.append(" ".join(temp))
+                self.features.append(features_array_from_string(" ".join(temp), self.columns))
+                self.author_chunks.append(self.aut2id[author])
 
     def _process_test_data(self):
         print("------------ Processing Test Corpora ------------", flush=True)
@@ -166,8 +167,9 @@ class BookDataset(Dataset):
                    doc_ids += sentence_ids
                    temp += [sentence]
 
-            text.append(" ".join(temp))
-            self.texts.append(text)
+            if (len(temp)>0):
+                text.append(" ".join(temp))
+                self.texts.append(text)
 
         self.aut_doc_test = np.zeros((self.nd, self.na))
         self.aut_doc_test[[i for i in range(self.nd)],[self.aut2id[author] for author in self.author_documents]] = 1
