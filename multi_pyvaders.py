@@ -185,7 +185,6 @@ if __name__ == "__main__":
         
         return ce, lr
 
-
     def fit(epochs, model, loss_fn, opt, train_dl, test_dataset, features):
 
         if idr_torch.rank == 0:
@@ -226,4 +225,4 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join("results",method)):
             os.mkdir(os.path.join("results",method))
 
-        fit(EPOCHS, model, criterion, optimizer, train_dl, dataset_test, features)
+    fit(EPOCHS, ddp_model, criterion, optimizer, train_dl, dataset_test, features)
