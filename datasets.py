@@ -171,6 +171,7 @@ class BookDataset(Dataset):
                 if l>510:
                     if len(temp)>0:
                         text.append(" ".join(temp))
+
                         l=len(sentence_ids)
                         doc_ids=sentence_ids
                         temp = [sentence]
@@ -185,7 +186,8 @@ class BookDataset(Dataset):
 
             if (len(temp)>0):
                 text.append(" ".join(temp))
-                self.texts.append(text)
+            
+            self.texts.append(text)
 
         self.aut_doc_test = np.zeros((self.nd, self.na))
         self.aut_doc_test[[i for i in range(self.nd)],[self.aut2id[author] for author in self.author_documents]] = 1
