@@ -117,6 +117,8 @@ def count_digit_freq(text_doc):
 
 # Average sentence length in a document
 def average_sentence_length(sent_list):
+    if len(sent_list)==0:
+        return 0
     average = sum(len(tokenize(sent)) for sent in sent_list)/(len(sent_list))
     return average
 
