@@ -65,10 +65,14 @@ def total_short_words(words):
 # Lexical feature (character level)
 # Average number of digit in document
 def total_digit(text_doc):
+    if len(text_doc)==0:
+        return 0
     return sum(c.isdigit() for c in text_doc)/(len(text_doc))
 
 # Average number of uppercase letters in document
 def total_uppercase(text_doc):
+    if len(text_doc)==0:
+        return 0
     return sum(1 for c in text_doc if c.isupper())/(len(text_doc))
 
 # Letter frequency in document

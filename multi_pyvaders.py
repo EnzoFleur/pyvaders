@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # CLIPNORM =  1.0
 
     # LEARNING_RATE = 5e-5
-    # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\gutenberg"
+    # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\BlogAuthorshipCorpus10"
     # EPOCHS=5
     # BATCH_SIZE=5
     # NEGPAIRS=5

@@ -112,13 +112,23 @@ class BookDataset(Dataset):
             for sentence, sentence_ids in zip(sentences, sentences_ids):
                 l+=len(sentence_ids)
                 if l>510:
-                    self.texts.append(" ".join(temp))
-                    self.features.append(features_array_from_string(" ".join(temp), self.columns))
-                    self.author_chunks.append(self.aut2id[author])
+                    if len(temp)>0:
+                        self.texts.append(" ".join(temp))
+                        self.features.append(features_array_from_string(" ".join(temp), self.columns))
+                        self.author_chunks.append(self.aut2id[author])
 
-                    l=len(sentence_ids)
-                    doc_ids=sentence_ids
-                    temp = [sentence]
+                        l=len(sentence_ids)
+                        doc_ids=sentence_ids
+                        temp = [sentence]
+                    else:
+                        text1, text2 = sentence[:len(sentence)//2], sentence[len(sentence)//2:]
+                        self.texts.append(text1)
+                        self.features.append(features_array_from_string(text1, self.columns))
+                        self.author_chunks.append(self.aut2id[author])
+                        self.texts.append(text2)
+                        self.features.append(features_array_from_string(text2, self.columns))
+                        self.author_chunks.append(self.aut2id[author])
+                        l=0
                 else:
                    doc_ids += sentence_ids
                    temp += [sentence]
@@ -142,11 +152,16 @@ class BookDataset(Dataset):
             for sentence, sentence_ids in zip(sentences, sentences_ids):
                 l+=len(sentence_ids)
                 if l>510:
-                    text.append(" ".join(temp))
-
-                    l=len(sentence_ids)
-                    doc_ids=sentence_ids
-                    temp = [sentence]
+                    if len(temp)>0:
+                        text.append(" ".join(temp))
+                        l=len(sentence_ids)
+                        doc_ids=sentence_ids
+                        temp = [sentence]
+                    else:
+                        text1, text2 = sentence[:len(sentence)//2], sentence[len(sentence)//2:]
+                        text.append(text1)
+                        text.append(text2)
+                        l=0
                 else:
                    doc_ids += sentence_ids
                    temp += [sentence]
