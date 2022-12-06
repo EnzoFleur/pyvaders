@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     columns = features.drop(["author"], axis=1).columns
 
-    dataset_train = BookDataset(data_dir, encoder = "DistilBERT", train=True, columns = columns, max_len = 512, seed = 13)
+    dataset_train = BookDataset(data_dir, encoder = "DistilBERT", train=True, columns = columns, max_len = 512, seed = 42)
 
     features = features[features.author.isin(dataset_train.authors)]
 
@@ -115,8 +115,6 @@ if __name__ == "__main__":
 
     dataset_test = BookDataset(data_dir, encoder = "DistilBERT", train=False, columns = columns, max_len = 512, seed = 42)
     dataset_test._process_test_data()
-
-    train_dl = DataLoader(dataset_train, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
 
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset_train,
                                                                    num_replicas = idr_torch.size,

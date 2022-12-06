@@ -68,8 +68,6 @@ class BookDataset(Dataset):
         
         self.documents = []
         self.author_documents = []
-        # self.doc2aut = {}
-        # self.id_docs = []
 
         print("------------ Reading Corpora ------------", flush=True)
         for author in tqdm(self.authors):
