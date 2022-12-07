@@ -64,7 +64,7 @@ class BookDataset(Dataset):
         elif encoder == "BERT":
           self.tokenizer = BertTokenizer.from_pretrained(BERT_PATH)
 
-        self.authors = sorted([a for a in os.listdir(os.path.join(self.data_dir)) if os.path.isdir(os.path.join(self.data_dir, a))])[:20]
+        self.authors = sorted([a for a in os.listdir(os.path.join(self.data_dir)) if os.path.isdir(os.path.join(self.data_dir, a))])[:10]
         
         self.documents = []
         self.author_documents = []
@@ -134,7 +134,7 @@ class BookDataset(Dataset):
                    temp += [sentence]
 
             if l>510:
-                if (len(temp)>0)&(len(" ".join(temp))>50):
+                if (len(temp)>0)&(len(" ".join(temp))>150):
                     self.texts.append(" ".join(temp))
                     self.features.append(features_array_from_string(" ".join(temp), self.columns))
                     self.author_chunks.append(self.aut2id[author])
@@ -147,7 +147,7 @@ class BookDataset(Dataset):
                     self.features.append(features_array_from_string(text2, self.columns))
                     self.author_chunks.append(self.aut2id[author])
             else:
-                if (len(temp)>0)&(len(" ".join(temp))>50):
+                if (len(temp)>0)&(len(" ".join(temp))>150):
                     self.texts.append(" ".join(temp))
                     self.features.append(features_array_from_string(" ".join(temp), self.columns))
                     self.author_chunks.append(self.aut2id[author])
@@ -184,7 +184,7 @@ class BookDataset(Dataset):
                    doc_ids += sentence_ids
                    temp += [sentence]
 
-            if (len(temp)>0):
+            if ((len(temp)>0) & (len(" ".join(temp)) > 150)):
                 text.append(" ".join(temp))
             
             self.texts.append(text)
