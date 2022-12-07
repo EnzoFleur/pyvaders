@@ -172,7 +172,7 @@ if __name__ == "__main__":
         lr = label_ranking_average_precision_score(test_dataset.aut_doc_test, y_score)*100
 
         if style:
-            res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index(), n_fold=10)
+            res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index().sort_values(by=["author"]), n_fold=10)
             print(res_df)
             res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
 

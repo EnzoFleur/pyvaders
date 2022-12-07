@@ -64,7 +64,7 @@ class BookDataset(Dataset):
         elif encoder == "BERT":
           self.tokenizer = BertTokenizer.from_pretrained(BERT_PATH)
 
-        self.authors = sorted([a for a in os.listdir(os.path.join(self.data_dir)) if os.path.isdir(os.path.join(self.data_dir, a))])[:10]
+        self.authors = sorted([a for a in os.listdir(os.path.join(self.data_dir)) if os.path.isdir(os.path.join(self.data_dir, a))])
         
         self.documents = []
         self.author_documents = []
@@ -96,13 +96,16 @@ class BookDataset(Dataset):
         self.nd = len(self.documents)
         self.na = len(self.authors)
 
+        print("%d texts and %d authors in corpora" % len(self.texts, self.authors), flush = True)
+
+
     def _process_train_data(self):
         print("------------ Processing Train Corpora ------------", flush=True)
         self.texts = []
         self.features = []
         self.author_chunks = []
         
-        for doc, author in tqdm(zip(self.documents, self.author_documents), total = len(self.documents)):
+        for doc, author in zip(self.documents, self.author_documents):
             sentences = sent_tokenize(doc)
             sentences_ids = self.tokenizer(sentences, add_special_tokens=False)['input_ids']
 
@@ -152,13 +155,15 @@ class BookDataset(Dataset):
                     self.features.append(features_array_from_string(" ".join(temp), self.columns))
                     self.author_chunks.append(self.aut2id[author])
 
+        print("%d chunks in train corpora" % len(self.texts), flush = True)
+
         self.documents = []
 
     def _process_test_data(self):
         print("------------ Processing Test Corpora ------------", flush=True)
         self.texts = []
         
-        for doc in tqdm(self.documents, total=len(self.documents)):
+        for doc in self.documents:
             text = []
             sentences = sent_tokenize(doc)
             sentences_ids = self.tokenizer(sentences, add_special_tokens=False)['input_ids']
@@ -202,7 +207,7 @@ class BookDataset(Dataset):
         self.pairs = []
         self.labels = []
         doc_ids = [i for i in range(len(self.texts))]
-        for d, a in tqdm(enumerate(self.author_chunks), total=len(doc_ids)):
+        for d, a in enumerate(self.author_chunks):
             self.pairs.append([d, a, d])
             self.labels.append([1,1])
 
@@ -214,6 +219,8 @@ class BookDataset(Dataset):
 
             self.pairs.extend([[d, i, f] for i, f in zip(np.random.choice(list(range(0,a))+list(range(a+1, self.na)),negpairs), sample(doc_ids[:d] + doc_ids[d+1:], negpairs))])
             self.labels.extend([[0,0] for _ in range(negpairs)])
+        
+        print("%d pairs in for training" % len(self.pairs), flush = True)
 
     def __getitem__(self, index):
 
