@@ -194,6 +194,8 @@ class BookDataset(Dataset):
 
         self.documents = []
 
+        print("%d texts in test corpora" % len(self.texts), flush = True)
+
     def _negative_sample(self, negpairs=10):
         print("------------ Building Pairs ------------", flush=True)
 
