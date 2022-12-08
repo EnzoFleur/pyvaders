@@ -96,7 +96,7 @@ class BookDataset(Dataset):
         self.nd = len(self.documents)
         self.na = len(self.authors)
 
-        print("%d texts and %d authors in corpora" % len(self.documents, self.authors), flush = True)
+        print("%d texts and %d authors in corpora" % (len(self.documents), len(self.authors)), flush = True)
 
 
     def _process_train_data(self):
