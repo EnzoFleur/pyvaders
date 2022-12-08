@@ -137,7 +137,7 @@ class BookDataset(Dataset):
                    temp += [sentence]
 
             if l>510:
-                if (len(temp)>0)&(len(" ".join(temp))>150):
+                if (len(temp)>0)&(len(" ".join(temp))>100):
                     self.texts.append(" ".join(temp))
                     self.features.append(features_array_from_string(" ".join(temp), self.columns))
                     self.author_chunks.append(self.aut2id[author])
@@ -150,14 +150,12 @@ class BookDataset(Dataset):
                     self.features.append(features_array_from_string(text2, self.columns))
                     self.author_chunks.append(self.aut2id[author])
             else:
-                if (len(temp)>0)&(len(" ".join(temp))>150):
+                if (len(temp)>0)&(len(" ".join(temp))>100):
                     self.texts.append(" ".join(temp))
                     self.features.append(features_array_from_string(" ".join(temp), self.columns))
                     self.author_chunks.append(self.aut2id[author])
 
         print("%d chunks in train corpora" % len(self.texts), flush = True)
-
-        self.documents = []
 
     def _process_test_data(self):
         print("------------ Processing Test Corpora ------------", flush=True)
@@ -189,7 +187,7 @@ class BookDataset(Dataset):
                    doc_ids += sentence_ids
                    temp += [sentence]
 
-            if ((len(temp)>0) & (len(" ".join(temp)) > 150)):
+            if (len(temp)>0):
                 text.append(" ".join(temp))
             
             self.texts.append(text)
@@ -197,9 +195,8 @@ class BookDataset(Dataset):
         self.aut_doc_test = np.zeros((self.nd, self.na))
         self.aut_doc_test[[i for i in range(self.nd)],[self.aut2id[author] for author in self.author_documents]] = 1
 
-        self.documents = []
-
         print("%d texts in test corpora" % len(self.texts), flush = True)
+
 
     def _negative_sample(self, negpairs=10):
         print("------------ Building Pairs ------------", flush=True)
