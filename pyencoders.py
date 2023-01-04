@@ -147,10 +147,9 @@ class VADER(nn.Module):
         return masked_outputs
 
     def attention(self, h):
-        v = torch.matmul(self.q, h.transpose(-2, -1)).squeeze(1)
-        print("v is cuda :", v.is_cuda)
         print("q is cuda :", self.q.is_cuda)
-        print("v is cuda :", self.h.is_cuda)
+        print("v is cuda :", h.is_cuda)
+        v = torch.matmul(self.q, h.transpose(-2, -1)).squeeze(1)
         v = F.softmax(v, -1)
         v_temp = torch.matmul(v.unsqueeze(1), h).transpose(-2, -1)
         v = torch.matmul(self.w_h.transpose(1, 0), v_temp).squeeze(2)
