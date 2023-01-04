@@ -101,9 +101,7 @@ class VADER(nn.Module):
         self.layer_weights = nn.Parameter(torch.tensor([1] * self.num_hidden_layers, dtype=torch.float))
 
         if self.with_attention:
-            # q_t = np.random.normal(loc=0.0, scale=0.1, size=(1, 768))
             self.q = nn.Parameter(torch.normal(0.0, 0.1, size=(1,768)))
-            # w_ht = np.random.normal(loc=0.0, scale=0.1, size=(768, 768))
             self.w_h = nn.Parameter(torch.normal(0.0, 0.1, size=(768,768)))
 
     def reparameterize(self, mean, logvar):
@@ -147,8 +145,6 @@ class VADER(nn.Module):
         return masked_outputs
 
     def attention(self, h):
-        print("q is cuda :", self.q.is_cuda)
-        print("v is cuda :", h.is_cuda)
         v = torch.matmul(self.q, h.transpose(-2, -1)).squeeze(1)
         v = F.softmax(v, -1)
         v_temp = torch.matmul(v.unsqueeze(1), h).transpose(-2, -1)
