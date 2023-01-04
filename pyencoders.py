@@ -101,10 +101,10 @@ class VADER(nn.Module):
         self.layer_weights = nn.Parameter(torch.tensor([1] * self.num_hidden_layers, dtype=torch.float))
 
         if self.with_attention:
-            q_t = np.random.normal(loc=0.0, scale=0.1, size=(1, 768))
-            self.q = nn.Parameter(torch.from_numpy(q_t)).float()
-            w_ht = np.random.normal(loc=0.0, scale=0.1, size=(768, 768))
-            self.w_h = nn.Parameter(torch.from_numpy(w_ht)).float()
+            # q_t = np.random.normal(loc=0.0, scale=0.1, size=(1, 768))
+            self.q = nn.Parameter(torch.normal(0.0, 0.1, size=(1,768)))
+            # w_ht = np.random.normal(loc=0.0, scale=0.1, size=(768, 768))
+            self.w_h = nn.Parameter(torch.normal(0.0, 0.1, size=(768,768)))
 
     def reparameterize(self, mean, logvar):
         
