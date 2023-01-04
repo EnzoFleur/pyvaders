@@ -199,9 +199,9 @@ if __name__ == "__main__":
         for epoch in range(1,epochs+1):
 
             if (epoch > 5) & FREEZE:
-                for param in model.encoder.parameters():
+                for param in model.module.encoder.parameters():
                     param.requires_grad=False
-                    
+
             model.train()
             
             if idr_torch.rank == 0: start = datetime.now()
