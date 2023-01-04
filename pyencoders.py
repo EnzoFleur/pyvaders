@@ -40,7 +40,6 @@ class DAN(nn.Module):
 
         return x
 
-
 class MLP(nn.Module):
         def __init__(self, input_size, output_size):
             super(MLP, self).__init__()
@@ -65,20 +64,24 @@ class MLP(nn.Module):
             return x
 
 class VADER(nn.Module):
-    def __init__(self, na, doc_r, encoder, beta=1e-12, alpha=1/2, L=1):
+    def __init__(self, na, doc_r, encoder, beta=1e-12, alpha=1/2, L=1, with_attention=False):
         super(VADER, self).__init__()
         self.na = na
         self.beta = beta
         self.L = L
         self.doc_r = doc_r
         self.alpha = alpha
+        self.with_attention = with_attention
 
         self.drop = nn.Dropout(0.1)
 
         if encoder=="DistilBERT":
-            self.encoder = DistilBertModel.from_pretrained(DISTILBERT_PATH)
+            self.encoder = DistilBertModel.from_pretrained(DISTILBERT_PATH, output_hidden_states=True)
+            self.num_hidden_layers = 7
+
         elif encoder=="BERT":
-            self.encoder = BertModel.from_pretrained(BERT_PATH)
+            self.encoder = BertModel.from_pretrained(BERT_PATH, output_hidden_states=True)
+            self.num_hidden_layers = 12
 
         self.a_authors = nn.Parameter(torch.rand(1))
         self.b_authors = nn.Parameter(torch.rand(1))
@@ -94,6 +97,14 @@ class VADER(nn.Module):
         
         self.logvar_author = nn.Embedding(self.na, self.doc_r)
         nn.init.uniform_(self.logvar_author.weight, a=-0.5, b=0.5)
+
+        self.layer_weights = nn.Parameter(torch.tensor([1] * self.num_hidden_layers, dtype=torch.float))
+
+        if self.with_attention:
+            q_t = np.random.normal(loc=0.0, scale=0.1, size=(1, 768))
+            self.q = nn.Parameter(torch.from_numpy(q_t)).float()
+            w_ht = np.random.normal(loc=0.0, scale=0.1, size=(768, 768))
+            self.w_h = nn.Parameter(torch.from_numpy(w_ht)).float()
 
     def reparameterize(self, mean, logvar):
         
@@ -135,12 +146,40 @@ class VADER(nn.Module):
         
         return masked_outputs
 
+    def attention(self, h):
+        v = torch.matmul(self.q, h.transpose(-2, -1)).squeeze(1)
+        v = F.softmax(v, -1)
+        v_temp = torch.matmul(v.unsqueeze(1), h).transpose(-2, -1)
+        v = torch.matmul(self.w_h.transpose(1, 0), v_temp).squeeze(2)
+        return v
+
+    def compute_attention_masked_means(self, outputs, masks):
+        # we don't want to include padding tokens
+        # outputs : B x T x D
+        # masks   : B x T
+        dim = outputs.size(2)
+        masks_dim = masks.unsqueeze(2).repeat(1, 1, dim)
+        # masked_outputs : B x T x D
+        masked_outputs = outputs * masks_dim  # makes the masked entries 0
+        # masked_outputs: B x D / B x 1 => B x D
+        partition = torch.sum(masks, dim=1, keepdim=True)
+
+        masked_outputs = self.attention(masked_outputs)/partition
+        
+        return masked_outputs
+
     def forward(self, ids, mask):
         
         encoder_output = self.encoder(input_ids=ids, attention_mask=mask)
-        hidden_state = encoder_output[0]
+        hidden_state = torch.stack(encoder_output["hidden_states"])
 
-        hidden_state = self.compute_masked_means(hidden_state, mask)
+        weight_factor = self.layer_weights.view(self.num_hidden_layers, 1, 1, 1).expand(hidden_state.shape)
+        hidden_state = (weight_factor * hidden_state).sum(dim=0) / self.layer_weights.sum()
+
+        if self.with_attention:
+            hidden_state = self.compute_attention_masked_means(hidden_state, mask)
+        else:
+            hidden_state = self.compute_masked_means(hidden_state, mask)
         
         doc_mean = self.doc_mean(hidden_state)
         doc_var = self.doc_var(hidden_state)
@@ -210,3 +249,52 @@ class DeepStyle(nn.Module):
         output = self.out(hidden_state)
 
         return output
+
+# ##### TESTING #####
+
+# class AttentionPooling(nn.Module):
+#     def __init__(self, num_layers, hidden_size, hiddendim_fc):
+#         super(AttentionPooling, self).__init__()
+#         self.num_hidden_layers = num_layers
+#         self.hidden_size = hidden_size
+#         self.hiddendim_fc = hiddendim_fc
+#         self.dropout = nn.Dropout(0.1)
+
+#         q_t = np.random.normal(loc=0.0, scale=0.1, size=(1, self.hidden_size))
+#         self.q = nn.Parameter(torch.from_numpy(q_t)).float()
+#         w_ht = np.random.normal(loc=0.0, scale=0.1, size=(self.hidden_size, self.hiddendim_fc))
+#         self.w_h = nn.Parameter(torch.from_numpy(w_ht)).float()
+
+#     def forward(self, all_hidden_states):
+#         hidden_states = torch.stack([all_hidden_states[layer_i][:, 0].squeeze()
+#                                      for layer_i in range(1, self.num_hidden_layers+1)], dim=-1)
+#         hidden_states = hidden_states.view(-1, self.num_hidden_layers, self.hidden_size)
+#         out = self.attention(hidden_states)
+#         out = self.dropout(out)
+#         return out
+
+#     def attention(self, h):
+#         v = torch.matmul(self.q, h.transpose(-2, -1)).squeeze(1)
+#         v = F.softmax(v, -1)
+#         v_temp = torch.matmul(v.unsqueeze(1), h).transpose(-2, -1)
+#         v = torch.matmul(self.w_h.transpose(1, 0), v_temp).squeeze(2)
+#         return v
+
+# from transformers import DistilBertTokenizer
+
+# tokenizer = DistilBertTokenizer.from_pretrained(DISTILBERT_PATH)
+
+# sentences = ["She doesn’t study German on Monday.",
+#              "Does she live in Paris?",
+#              "He doesn’t teach math.",
+#              "Cats hate water.",
+#              "Every child likes an ice cream.",
+#              "My brother takes out the trash.",
+#              "The course starts next Sunday.",
+#              "She swims every morning.",
+#              "I don’t wash the dishes.",
+#              "We see them every week."]
+
+# tokens = tokenizer(sentences, padding=True, truncation=True, max_length=512, return_tensors='pt')
+# input_ids = tokens['input_ids']
+# attention_masks = tokens['attention_mask']

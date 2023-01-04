@@ -37,6 +37,8 @@ def set_seed(graine):
     torch.manual_seed(graine)
     torch.cuda.manual_seed_all(graine)
 
+ft_dict = {"True":True, "False":False}
+
 if __name__ == "__main__":
 
     NODE_ID = os.environ['SLURM_NODEID']
@@ -65,6 +67,10 @@ if __name__ == "__main__":
                         help='Text encoder')
     parser.add_argument('-a','--alpha', default=1/2, type=float,
                         help='Alpha parameter value')
+    parser.add_argument('-wa','--attention', default="False", type=str,
+                        help='Alpha parameter value')
+    parser.add_argument('-f','--freeze', default="False", type=str,
+                        help='Alpha parameter value')
     args = parser.parse_args()
 
     data_dir = args.dataset
@@ -77,16 +83,19 @@ if __name__ == "__main__":
     LEARNING_RATE = args.learningrate
     ENCODER = args.encoder
     ALPHA = args.alpha
+    ATTENTION = ft_dict[args.attention]
+    FREEZE = ft_dict[args.freeze]
 
     MAX_LEN = 512
     # CLIPNORM =  1.0
 
     # LEARNING_RATE = 5e-5
-    # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\BlogAuthorshipCorpus10"
+    # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\gutenberg"
     # EPOCHS=5
     # BATCH_SIZE=5
     # NEGPAIRS=5
     # name="poutou"
+    # dataset = data_dir.split(os.sep)[-1]
 
     method = "multi_vaders_%s" % name
 
@@ -129,7 +138,7 @@ if __name__ == "__main__":
                           pin_memory = True,
                           sampler = train_sampler)
 
-    model = VADER(na=dataset_train.na, doc_r=300, encoder=ENCODER, L=10, alpha=ALPHA)
+    model = VADER(na=dataset_train.na, doc_r=300, encoder=ENCODER, L=10, alpha=ALPHA, with_attention=ATTENTION)
     model.to(device)
 
     ddp_model = DDP(model, device_ids=[idr_torch.local_rank])
@@ -188,6 +197,11 @@ if __name__ == "__main__":
             ce, lr = eval_fn(test_dataset, model, features)
 
         for epoch in range(1,epochs+1):
+
+            if (epoch > 5) & FREEZE:
+                for param in model.encoder.parameters():
+                    param.requires_grad=False
+                    
             model.train()
             
             if idr_torch.rank == 0: start = datetime.now()
