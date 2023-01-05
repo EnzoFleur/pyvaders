@@ -64,7 +64,7 @@ class MLP(nn.Module):
             return x
 
 class VADER(nn.Module):
-    def __init__(self, na, doc_r, encoder, beta=1e-12, alpha=1/2, L=1, with_attention=False):
+    def __init__(self, na, doc_r, encoder, beta=1e-12, alpha=1/2, L=1, with_attention=False, finetune=True):
         super(VADER, self).__init__()
         self.na = na
         self.beta = beta
@@ -72,6 +72,7 @@ class VADER(nn.Module):
         self.doc_r = doc_r
         self.alpha = alpha
         self.with_attention = with_attention
+        self.finetune = finetune
 
         self.drop = nn.Dropout(0.1)
 
@@ -82,6 +83,9 @@ class VADER(nn.Module):
         elif encoder=="BERT":
             self.encoder = BertModel.from_pretrained(BERT_PATH, output_hidden_states=True)
             self.num_hidden_layers = 12
+
+        for param in self.encoder.parameters():
+            param.requires_grad = self.finetune
 
         self.a_authors = nn.Parameter(torch.rand(1))
         self.b_authors = nn.Parameter(torch.rand(1))
