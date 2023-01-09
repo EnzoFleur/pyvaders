@@ -84,8 +84,8 @@ class VADER(nn.Module):
             self.encoder = BertModel.from_pretrained(BERT_PATH, output_hidden_states=True)
             self.num_hidden_layers = 12
 
-        for param in self.encoder.parameters():
-            param.requires_grad = self.finetune
+        # for param in self.encoder.parameters():
+        #     param.requires_grad = self.finetune
 
         self.a_authors = nn.Parameter(torch.rand(1))
         self.b_authors = nn.Parameter(torch.rand(1))

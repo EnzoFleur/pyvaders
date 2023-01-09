@@ -198,9 +198,9 @@ if __name__ == "__main__":
 
         for epoch in range(1,epochs+1):
 
-            # if (epoch > 5) & FREEZE:
-            #     for param in model.module.encoder.parameters():
-            #         param.requires_grad=False
+            if (epoch > 4) & FREEZE:
+                for param in model.module.encoder.parameters():
+                    param.requires_grad=False
 
             model.train()
             
@@ -226,8 +226,9 @@ if __name__ == "__main__":
                 opt.step()
 
             if (idr_torch.rank == 0):
-
-                ce, lr = eval_fn(test_dataset, model, features, style=(epoch%2 == 0))
+                
+                if (epoch % 5 == 0):
+                    ce, lr = eval_fn(test_dataset, model, features, style=(epoch%2 == 0))
 
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
 
