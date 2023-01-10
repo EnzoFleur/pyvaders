@@ -64,7 +64,7 @@ class BookDataset(Dataset):
         elif encoder == "BERT":
           self.tokenizer = BertTokenizer.from_pretrained(BERT_PATH)
 
-        self.authors = sorted([a for a in os.listdir(os.path.join(self.data_dir)) if os.path.isdir(os.path.join(self.data_dir, a))])[:10]
+        self.authors = sorted([a for a in os.listdir(os.path.join(self.data_dir)) if os.path.isdir(os.path.join(self.data_dir, a))])
         
         self.documents = []
         self.author_documents = []
