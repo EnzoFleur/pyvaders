@@ -227,8 +227,8 @@ if __name__ == "__main__":
 
             if (idr_torch.rank == 0):
                 
-                if (epoch % 1 == 0):
-                    ce, lr = eval_fn(test_dataset, model, features, style=(epoch%2 == 0))
+                if (epoch % 5 == 0):
+                    ce, lr = eval_fn(test_dataset, model, features, style=True)
 
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
 
