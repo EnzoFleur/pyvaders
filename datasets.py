@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 import torch
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 import torch.nn as nn
-from transformers import DistilBertTokenizer, BertTokenizer
+from transformers import DistilBertTokenizerFast, BertTokenizerFast
 from sklearn import metrics
 from sklearn.preprocessing import StandardScaler, normalize
 from sklearn.metrics import coverage_error,label_ranking_average_precision_score
@@ -60,9 +60,9 @@ class BookDataset(Dataset):
         self.columns = columns
 
         if encoder == "DistilBERT":
-          self.tokenizer = DistilBertTokenizer.from_pretrained(DISTILBERT_PATH)
+            self.tokenizer = DistilBertTokenizerFast.from_pretrained(DISTILBERT_PATH)
         elif encoder == "BERT":
-          self.tokenizer = BertTokenizer.from_pretrained(BERT_PATH)
+            self.tokenizer = BertTokenizerFast.from_pretrained(BERT_PATH)
 
         self.authors = sorted([a for a in os.listdir(os.path.join(self.data_dir)) if os.path.isdir(os.path.join(self.data_dir, a))])
         
