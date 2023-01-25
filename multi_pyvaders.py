@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     # optimizer = torch.optim.Adam(params = ddp_model.parameters(), lr = LEARNING_RATE)
 
-    optimizer = torch.optim.Adam(params = [{'params': ddp_model.module.params.encoder.parameters(), 'lr': 5e-4,
+    optimizer = torch.optim.Adam(params = [{'params': ddp_model.module.params.encoder.parameters(), 'lr': 3e-4,
                                            'params': ddp_model.module.params.classifier.parameters(), 'lr': LEARNING_RATE}])
 
     total_steps = len(train_dl) * EPOCHS
