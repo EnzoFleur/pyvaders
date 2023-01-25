@@ -201,7 +201,7 @@ if __name__ == "__main__":
         
         return ce, lr
 
-    def fit(epochs, model, loss_fn, opt, train_dl, test_dataset, features):
+    def fit(epochs, model, loss_fn, optimizer, scheduler, train_dl, test_dataset, features):
 
         if idr_torch.rank == 0:
             ce, lr = eval_fn(test_dataset, model, features)
@@ -229,11 +229,13 @@ if __name__ == "__main__":
 
                 loss, f_loss, a_loss, p_loss = model.module.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
 
-                opt.zero_grad()
+                optimizer.zero_grad()
 
                 loss.backward()
                 # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
-                opt.step()
+                optimizer.step()
+
+                scheduler.step()
 
             if (idr_torch.rank == 0):
                 
@@ -249,4 +251,4 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join("results",method)):
             os.mkdir(os.path.join("results",method))
 
-    fit(EPOCHS, ddp_model, criterion, optimizer, train_dl, dataset_test, features)
+    fit(EPOCHS, ddp_model, criterion, optimizer, scheduler, train_dl, dataset_test, features)
