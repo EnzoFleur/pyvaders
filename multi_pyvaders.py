@@ -12,6 +12,8 @@ import os
 import argparse
 from datetime import datetime
 
+from transformers import get_linear_schedule_with_warmup
+
 from pyencoders import VADER
 from datasets import BookDataset
 
@@ -145,7 +147,15 @@ if __name__ == "__main__":
 
     criterion = nn.BCEWithLogitsLoss()
 
-    optimizer = torch.optim.Adam(params = ddp_model.parameters(), lr = LEARNING_RATE)
+    # optimizer = torch.optim.Adam(params = ddp_model.parameters(), lr = LEARNING_RATE)
+
+    optimizer = torch.optim.Adam(params = [{'params': ddp_model.module.params.encoder.parameters(), 'lr': 5e-4,
+                                           'params': ddp_model.module.params.classifier.parameters(), 'lr': LEARNING_RATE}])
+
+    total_steps = len(train_dl) * EPOCHS
+    scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                num_warmup_steps = 0, 
+                                                num_training_steps = total_steps)
 
     def eval_fn(test_dataset, model, features, style=True):
         
