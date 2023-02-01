@@ -149,12 +149,8 @@ if __name__ == "__main__":
 
     # optimizer = torch.optim.Adam(params = ddp_model.parameters(), lr = LEARNING_RATE)
 
-    optimizer = torch.optim.Adam(params = [{'params': model.encoder.parameters(), 'lr': 3e-4},
-                                           {'params': model.params.classifier.parameters(), 'lr': LEARNING_RATE}])
-
-
-    optimizer = torch.optim.Adam(params = [{'params': ddp_model.module.params.encoder.parameters(), 'lr': 3e-4},
-                                           {'params': ddp_model.module.params.classifier.parameters(), 'lr': LEARNING_RATE}])
+    optimizer = torch.optim.Adam(params = [{'params': ddp_model.module.encoder.parameters(), 'lr': 3e-4},
+                                           {'params': [*ddp_model.module.params.parameters(), *ddp_model.module.mean_author.parameters(), *ddp_model.module.logvar_author.parameters()], 'lr': LEARNING_RATE}])
 
     total_steps = len(train_dl) * EPOCHS
     scheduler = get_linear_schedule_with_warmup(optimizer,

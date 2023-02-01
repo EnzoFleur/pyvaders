@@ -3,6 +3,7 @@ import torch.nn as nn
 from transformers import DistilBertModel, BertModel
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 import torch.nn.functional as F
+from itertools import chain
 import numpy as np
 import os
 
@@ -106,7 +107,7 @@ class VADER(nn.Module):
 
         self.params = nn.ParameterDict({
             'classifier': nn.ParameterList([self.a_authors, self.b_authors, self.a_features, self.b_features,
-                                        self.mean_author, self.logvar_author, self.layer_weights])
+                                            self.layer_weights])
         })
 
         if self.with_attention:
