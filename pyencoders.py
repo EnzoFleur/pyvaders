@@ -105,10 +105,8 @@ class VADER(nn.Module):
 
         self.layer_weights = nn.Parameter(torch.tensor([1] * self.num_hidden_layers, dtype=torch.float))
 
-        self.params = nn.ParameterDict({
-            'classifier': nn.ParameterList([self.a_authors, self.b_authors, self.a_features, self.b_features,
+        self.params = nn.ParameterList([self.a_authors, self.b_authors, self.a_features, self.b_features,
                                             self.layer_weights])
-        })
 
         if self.with_attention:
             self.q = nn.Parameter(torch.normal(0.0, 0.1, size=(1,768)))
