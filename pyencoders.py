@@ -74,7 +74,7 @@ class VADER(nn.Module):
         self.with_attention = with_attention
         self.finetune = finetune
 
-        self.drop = nn.Dropout(0.1)
+        self.drop = nn.Dropout(0.2)
 
         if encoder=="DistilBERT":
             self.encoder = DistilBertModel.from_pretrained(DISTILBERT_PATH, output_hidden_states=True)
@@ -106,8 +106,8 @@ class VADER(nn.Module):
 
         self.params = nn.ModuleDict({
             'encoder': nn.ModuleList([self.encoder]),
-            'classifier': nn.ModuleList([self.a_authors, self.b_authors, self.a_features, self.b_features,
-                                         self.mean_author, self.logvar_author, self.layer_weights])
+            'classifier': nn.ParameterList([self.a_authors, self.b_authors, self.a_features, self.b_features,
+                                        self.mean_author, self.logvar_author, self.layer_weights])
         })
 
         if self.with_attention:
