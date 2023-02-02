@@ -140,7 +140,7 @@ if __name__ == "__main__":
                           pin_memory = True,
                           sampler = train_sampler)
 
-    model = VADER(na=dataset_train.na, doc_r=300, encoder=ENCODER, L=10, alpha=ALPHA, with_attention=ATTENTION, finetune=FREEZE)
+    model = VADER(na=dataset_train.na, doc_r=300, encoder=ENCODER, L=10, alpha=ALPHA, with_attention=ATTENTION)
     model.to(device)
 
     ddp_model = DDP(model, device_ids=[idr_torch.local_rank])
@@ -208,7 +208,7 @@ if __name__ == "__main__":
 
         for epoch in range(1,epochs+1):
 
-            if (epoch > 4) & FREEZE:
+            if (epoch > 9) & FREEZE:
                 for param in model.module.encoder.parameters():
                     param.requires_grad=False
 
