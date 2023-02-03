@@ -24,7 +24,7 @@ import idr_torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from torch.cuda.amp import GradScaler, autocast
+from torch.cuda.amp import GradScaler
 
 # Setting up the device for GPU usage
 dist.init_process_group(backend = 'nccl',
@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
             for batch in train_dl:
                 
-                with autocast(device_type='cuda', dtype=torch.float16):
+                with torch.autocast(device_type='cuda', dtype=torch.float16):
                     
                     author, doc, doc_f, y_a, y_f = batch.values()
 
