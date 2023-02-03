@@ -268,4 +268,4 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join("results",method)):
             os.mkdir(os.path.join("results",method))
 
-    fit(EPOCHS, ddp_model, criterion, optimizer, scheduler, train_dl, dataset_test, features)
+    fit(EPOCHS, ddp_model, criterion, optimizer, scheduler, scaler, train_dl, dataset_test, features)
