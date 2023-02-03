@@ -24,6 +24,8 @@ import idr_torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
+from torch.cuda.amp import GradScaler, autocast
+
 # Setting up the device for GPU usage
 dist.init_process_group(backend = 'nccl',
                         init_method = 'env://',
@@ -153,9 +155,18 @@ if __name__ == "__main__":
     #                                        {'params': [*ddp_model.module.params.parameters(), *ddp_model.module.mean_author.parameters(), *ddp_model.module.logvar_author.parameters()], 'lr': LEARNING_RATE}])
 
     total_steps = len(train_dl) * EPOCHS
-    scheduler = get_linear_schedule_with_warmup(optimizer,
-                                                num_warmup_steps = 0, 
-                                                num_training_steps = total_steps)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                           mode='max',
+                                                           factor=0.2, 
+                                                           patience=5, 
+                                                           threshold=0.01, verbose=True)
+
+    # scheduler = get_linear_schedule_with_warmup(optimizer,
+    #                                             num_warmup_steps = 0, 
+    #                                             num_training_steps = total_steps)
+
+    scaler = GradScaler()
 
     def eval_fn(test_dataset, model, features, style=True):
         
@@ -201,7 +212,7 @@ if __name__ == "__main__":
         
         return ce, lr
 
-    def fit(epochs, model, loss_fn, optimizer, scheduler, train_dl, test_dataset, features):
+    def fit(epochs, model, loss_fn, optimizer, scheduler, scaler, train_dl, test_dataset, features):
 
         if idr_torch.rank == 0:
             ce, lr = eval_fn(test_dataset, model, features)
@@ -218,24 +229,30 @@ if __name__ == "__main__":
 
             for batch in train_dl:
                 
-                author, doc, doc_f, y_a, y_f = batch.values()
+                with autocast(device_type='cuda', dtype=torch.float16):
+                    
+                    author, doc, doc_f, y_a, y_f = batch.values()
 
-                input_ids, attention_masks = dataset_train.tokenize_caption(doc, device)
+                    input_ids, attention_masks = dataset_train.tokenize_caption(doc, device)
 
-                doc_f = doc_f.to(device)
-                author = author.to(device)
-                y_a = y_a.to(device)
-                y_f = y_f.to(device)
+                    doc_f = doc_f.to(device)
+                    author = author.to(device)
+                    y_a = y_a.to(device)
+                    y_f = y_f.to(device)
 
-                loss, f_loss, a_loss, p_loss = model.module.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
+                    loss, f_loss, a_loss, p_loss = model.module.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
 
                 optimizer.zero_grad()
 
-                loss.backward()
-                # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
-                optimizer.step()
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
 
-                scheduler.step()
+                # loss.backward()
+                # # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
+                # optimizer.step()
+
+                scheduler.step(lr)
 
             if (idr_torch.rank == 0):
                 
