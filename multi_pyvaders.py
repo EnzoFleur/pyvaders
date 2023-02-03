@@ -24,7 +24,7 @@ import idr_torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from torch.cuda.amp import GradScaler
+from torch.cuda.amp import GradScaler, autocast
 
 # Setting up the device for GPU usage
 dist.init_process_group(backend = 'nccl',
@@ -177,19 +177,21 @@ if __name__ == "__main__":
             aut_vars = []
             aut_embeddings = []
 
-            for text in tqdm(test_dataset.texts):
 
-                input_ids, attention_masks = test_dataset.tokenize_caption(text, device)
+            with autocast():
+                for text in tqdm(test_dataset.texts):
 
-                doc_emb, _ = model(input_ids, attention_masks)
-                doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
+                    input_ids, attention_masks = test_dataset.tokenize_caption(text, device)
 
-            ll = [i for i in range(model.module.na)]
-            for i in range(0, model.module.na, BATCH_SIZE):
+                    doc_emb, _ = model(input_ids, attention_masks)
+                    doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
-                ids = torch.LongTensor(ll[i:i+BATCH_SIZE]).to(device)
-                aut_embeddings.append(model.module.mean_author(ids).cpu().detach().numpy())
-                aut_vars.append(model.module.logvar_author(ids).cpu().detach().numpy())
+                ll = [i for i in range(model.module.na)]
+                for i in range(0, model.module.na, BATCH_SIZE):
+
+                    ids = torch.LongTensor(ll[i:i+BATCH_SIZE]).to(device)
+                    aut_embeddings.append(model.module.mean_author(ids).cpu().detach().numpy())
+                    aut_vars.append(model.module.logvar_author(ids).cpu().detach().numpy())
 
         doc_embeddings = np.vstack(doc_embeddings)
         aut_embeddings = np.vstack(aut_embeddings)
@@ -229,7 +231,7 @@ if __name__ == "__main__":
 
             for batch in train_dl:
                 
-                with torch.autocast(device_type='cuda', dtype=torch.float16):
+                with autocast():
                     
                     author, doc, doc_f, y_a, y_f = batch.values()
 
