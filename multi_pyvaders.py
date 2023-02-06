@@ -218,6 +218,8 @@ if __name__ == "__main__":
 
         if idr_torch.rank == 0:
             ce, lr = eval_fn(test_dataset, model, features)
+        else:
+            ce, lr = 0.00, 0.00
 
         for epoch in range(1,epochs+1):
 
@@ -253,8 +255,7 @@ if __name__ == "__main__":
                 # loss.backward()
                 # # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 # optimizer.step()
-
-                scheduler.step(lr)
+                # scheduler.step()
 
             if (idr_torch.rank == 0):
                 
@@ -262,6 +263,11 @@ if __name__ == "__main__":
                     ce, lr = eval_fn(test_dataset, model, features, style=True)
 
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
+
+            dist.barrier()
+            dist.broadcast_object_list(lr, src = 0)
+
+            scheduler.step(lr)
 
 
     if (idr_torch.rank == 0):
