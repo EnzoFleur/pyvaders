@@ -170,8 +170,8 @@ if __name__ == "__main__":
 
     def eval_fn(test_dataset, model, features, style=True):
         
-        model.eval()
         with torch.no_grad():
+            model.eval()
 
             doc_embeddings = []
             aut_vars = []
@@ -220,7 +220,9 @@ if __name__ == "__main__":
         else:
             ce, lr = 0.00, 0.00
 
+        print("%d rank at barrier" % idr_torch.rank)
         dist.barrier()
+        print("%d rank passed barrier" % idr_torch.rank)
         dist.broadcast_object_list([lr], src = 0)
         print("LR is %f and my rank is %d" % (lr, idr_torch.rank))
 
@@ -267,7 +269,9 @@ if __name__ == "__main__":
 
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
 
+            print("%d rank at barrier" % idr_torch.rank)
             dist.barrier()
+            print("%d rank passed barrier" % idr_torch.rank)
             dist.broadcast_object_list([lr], src = 0)
 
             print("LR is %f and my rank is %d" % (lr, idr_torch.rank))
