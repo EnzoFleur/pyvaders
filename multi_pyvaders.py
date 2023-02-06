@@ -182,7 +182,7 @@ if __name__ == "__main__":
 
                     input_ids, attention_masks = test_dataset.tokenize_caption(text, device)
 
-                    doc_emb, _ = model.module(input_ids, attention_masks)
+                    doc_emb, _ = model(input_ids, attention_masks)
                     doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
                 ll = [i for i in range(model.na)]
