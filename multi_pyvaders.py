@@ -221,6 +221,10 @@ if __name__ == "__main__":
         else:
             ce, lr = 0.00, 0.00
 
+        dist.barrier()
+        dist.broadcast_object_list([lr], src = 0)
+        print("LR is %f" % lr)
+
         for epoch in range(1,epochs+1):
 
             if (epoch > 9) & FREEZE:
@@ -267,6 +271,7 @@ if __name__ == "__main__":
             dist.barrier()
             dist.broadcast_object_list([lr], src = 0)
 
+            print("LR is %f" % lr)
             scheduler.step(lr)
 
 
