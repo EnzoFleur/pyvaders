@@ -182,15 +182,15 @@ if __name__ == "__main__":
 
                     input_ids, attention_masks = test_dataset.tokenize_caption(text, device)
 
-                    doc_emb, _ = model(input_ids, attention_masks)
+                    doc_emb, _ = model.module(input_ids, attention_masks)
                     doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
-                ll = [i for i in range(model.module.na)]
-                for i in range(0, model.module.na, BATCH_SIZE):
+                ll = [i for i in range(model.na)]
+                for i in range(0, model.na, BATCH_SIZE):
 
                     ids = torch.LongTensor(ll[i:i+BATCH_SIZE]).to(device)
-                    aut_embeddings.append(model.module.mean_author(ids).cpu().detach().numpy())
-                    aut_vars.append(model.module.logvar_author(ids).cpu().detach().numpy())
+                    aut_embeddings.append(model.mean_author(ids).cpu().detach().numpy())
+                    aut_vars.append(model.logvar_author(ids).cpu().detach().numpy())
 
         doc_embeddings = np.vstack(doc_embeddings)
         aut_embeddings = np.vstack(aut_embeddings)
@@ -215,8 +215,13 @@ if __name__ == "__main__":
 
     def fit(epochs, model, loss_fn, optimizer, scheduler, scaler, train_dl, test_dataset, features):
 
-        ce, lr = eval_fn(test_dataset, model, features)
+        if idr_torch.rank == 0:
+            ce, lr = eval_fn(test_dataset, model.module, features)
+        else:
+            ce, lr = 0.00, 0.00
 
+        dist.barrier()
+        dist.broadcast_object_list([lr], src = 0)
         print("LR is %f and my rank is %d" % (lr, idr_torch.rank))
 
         for epoch in range(1,epochs+1):
@@ -254,11 +259,12 @@ if __name__ == "__main__":
                 # # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
                 # optimizer.step()
                 # scheduler.step()
-                
-                if (epoch % 2 == 0):
-                    ce, lr = eval_fn(test_dataset, model, features, style=True)
 
             if (idr_torch.rank == 0):
+                
+                if (epoch % 2 == 0):
+                    ce, lr = eval_fn(test_dataset, model.module, features, style=True)
+
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
 
             print("LR is %f and my rank is %d" % (lr, idr_torch.rank))
