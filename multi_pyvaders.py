@@ -217,9 +217,9 @@ if __name__ == "__main__":
 
         if idr_torch.rank == 0:
             ce, lr = eval_fn(test_dataset, model.module, features)
-            lr_gpu = torch.Tensor(lr).to(device)
+            lr_gpu = torch.Tensor([lr]).to(device)
         else:
-            lr_gpu = torch.Tensor(0.00).to(device)
+            lr_gpu = torch.Tensor([0.00]).to(device)
 
         print("%d rank at barrier" % idr_torch.rank)
         dist.barrier()
@@ -267,14 +267,14 @@ if __name__ == "__main__":
                 
                 if (epoch % 2 == 0):
                     ce, lr = eval_fn(test_dataset, model.module, features, style=True)
-                    lr_gpu = torch.Tensor(lr).to(device)
+                    lr_gpu = torch.Tensor([lr]).to(device)
 
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
 
             print("%d rank at barrier" % idr_torch.rank)
             dist.barrier()
             print("%d rank passed barrier" % idr_torch.rank)
-            dist.broadcast_object_list([lr_gpu], src = 0)
+            dist.broadcast([lr_gpu], src = 0)
 
             print("LR is %f and my rank is %d" % (lr, idr_torch.rank))
             scheduler.step(lr_gpu)
