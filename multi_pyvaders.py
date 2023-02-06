@@ -159,7 +159,7 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                            mode='max',
                                                            factor=0.2, 
-                                                           patience=5, 
+                                                           patience=0, 
                                                            threshold=0.01, verbose=True)
 
     # scheduler = get_linear_schedule_with_warmup(optimizer,
