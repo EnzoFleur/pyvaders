@@ -274,7 +274,7 @@ if __name__ == "__main__":
             print("%d rank at barrier" % idr_torch.rank)
             dist.barrier()
             print("%d rank passed barrier" % idr_torch.rank)
-            dist.broadcast([lr_gpu], src = 0)
+            dist.broadcast(lr_gpu, src = 0)
 
             print("LR is %f and my rank is %d" % (lr, idr_torch.rank))
             scheduler.step(lr_gpu)
