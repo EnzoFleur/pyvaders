@@ -265,7 +265,7 @@ if __name__ == "__main__":
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
 
             dist.barrier()
-            dist.broadcast_object_list(lr, src = 0)
+            dist.broadcast_object_list([lr], src = 0)
 
             scheduler.step(lr)
 
