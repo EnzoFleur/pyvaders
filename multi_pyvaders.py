@@ -158,8 +158,8 @@ if __name__ == "__main__":
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                            mode='max',
-                                                           factor=0.2, 
-                                                           patience=4, 
+                                                           factor=0.5, 
+                                                           patience=5, 
                                                            threshold=0.01, verbose=True)
 
     # scheduler = get_linear_schedule_with_warmup(optimizer,
@@ -265,7 +265,7 @@ if __name__ == "__main__":
 
             if (idr_torch.rank == 0):
                 
-                if (epoch % 2 == 0):
+                if (epoch % 5 == 0):
                     ce, lr = eval_fn(test_dataset, model.module, features, style=True)
                     lr_gpu = torch.Tensor([lr]).to(device)
 
