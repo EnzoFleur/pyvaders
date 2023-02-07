@@ -154,19 +154,19 @@ if __name__ == "__main__":
     # optimizer = torch.optim.Adam(params = [{'params': ddp_model.module.encoder.parameters(), 'lr': 3e-4},
     #                                        {'params': [*ddp_model.module.params.parameters(), *ddp_model.module.mean_author.parameters(), *ddp_model.module.logvar_author.parameters()], 'lr': LEARNING_RATE}])
 
-    # total_steps = len(train_dl) * EPOCHS
+    total_steps = len(train_dl) * EPOCHS
 
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-    #                                                        mode='max',
-    #                                                        factor=0.2, 
-    #                                                        patience=1, 
-    #                                                        threshold=0.01, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                           mode='max',
+                                                           factor=0.2, 
+                                                           patience=1, 
+                                                           threshold=0.01, verbose=True)
 
     # scheduler = get_linear_schedule_with_warmup(optimizer,
     #                                             num_warmup_steps = 0, 
     #                                             num_training_steps = total_steps)
 
-    # scaler = GradScaler()
+    scaler = GradScaler()
 
     def eval_fn(test_dataset, model, features, style=True):
         
@@ -217,15 +217,15 @@ if __name__ == "__main__":
 
         if idr_torch.rank == 0:
             ce, lr = eval_fn(test_dataset, model.module, features)
-        #     lr_gpu = torch.Tensor([lr]).to(device)
-        # else:
-        #     lr_gpu = torch.Tensor([0.00]).to(device)
+            lr_gpu = torch.Tensor([lr]).to(device)
+        else:
+            lr_gpu = torch.Tensor([0.00]).to(device)
 
-        # print("%d rank at barrier" % idr_torch.rank)
-        # dist.barrier()
-        # print("%d rank passed barrier" % idr_torch.rank)
-        # dist.broadcast(lr_gpu, src = 0)
-        # print("Rank %d LR : %f" % (idr_torch.rank, lr_gpu.cpu().detach().item()))
+        print("%d rank at barrier" % idr_torch.rank)
+        dist.barrier()
+        print("%d rank passed barrier" % idr_torch.rank)
+        dist.broadcast(lr_gpu, src = 0)
+        print("Rank %d LR : %f" % (idr_torch.rank, lr_gpu.cpu().detach().item()))
 
         for epoch in range(1,epochs+1):
 
@@ -239,28 +239,28 @@ if __name__ == "__main__":
 
             for batch in train_dl:
                 
-                # with autocast():
+                with autocast():
                     
-                author, doc, doc_f, y_a, y_f = batch.values()
+                    author, doc, doc_f, y_a, y_f = batch.values()
 
-                input_ids, attention_masks = dataset_train.tokenize_caption(doc, device)
+                    input_ids, attention_masks = dataset_train.tokenize_caption(doc, device)
 
-                doc_f = doc_f.to(device)
-                author = author.to(device)
-                y_a = y_a.to(device)
-                y_f = y_f.to(device)
+                    doc_f = doc_f.to(device)
+                    author = author.to(device)
+                    y_a = y_a.to(device)
+                    y_f = y_f.to(device)
 
-                loss, f_loss, a_loss, p_loss = model.module.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
+                    loss, f_loss, a_loss, p_loss = model.module.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
 
                 optimizer.zero_grad()
 
-                # scaler.scale(loss).backward()
-                # scaler.step(optimizer)
-                # scaler.update()
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
 
-                loss.backward()
-                # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
-                optimizer.step()
+                # loss.backward()
+                # # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
+                # optimizer.step()
                 # scheduler.step()
 
             if (idr_torch.rank == 0):
@@ -271,13 +271,13 @@ if __name__ == "__main__":
 
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
 
-            # print("%d rank at barrier" % idr_torch.rank)
-            # dist.barrier()
-            # print("%d rank passed barrier" % idr_torch.rank)
-            # dist.broadcast(lr_gpu, src = 0)
+            print("%d rank at barrier" % idr_torch.rank)
+            dist.barrier()
+            print("%d rank passed barrier" % idr_torch.rank)
+            dist.broadcast(lr_gpu, src = 0)
 
-            # print("Rank %d LR : %f" % (idr_torch.rank, lr_gpu.cpu().detach().detach()))
-            # scheduler.step(lr_gpu)
+            print("Rank %d LR : %f" % (idr_torch.rank, lr_gpu.cpu().detach().item()))
+            scheduler.step(lr_gpu)
 
 
     if (idr_torch.rank == 0):
@@ -286,4 +286,4 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join("results",method)):
             os.mkdir(os.path.join("results",method))
 
-    fit(EPOCHS, ddp_model, criterion, optimizer, None, None, train_dl, dataset_test, features)
+    fit(EPOCHS, ddp_model, criterion, optimizer, scheduler, scaler, train_dl, dataset_test, features)
