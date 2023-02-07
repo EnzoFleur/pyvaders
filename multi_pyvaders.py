@@ -159,7 +159,7 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                            mode='max',
                                                            factor=0.2, 
-                                                           patience=0, 
+                                                           patience=1, 
                                                            threshold=0.01, verbose=True)
 
     # scheduler = get_linear_schedule_with_warmup(optimizer,
@@ -225,7 +225,7 @@ if __name__ == "__main__":
         dist.barrier()
         print("%d rank passed barrier" % idr_torch.rank)
         dist.broadcast(lr_gpu, src = 0)
-        print("LR is %f and my rank is %d" % (lr_gpu.cpu().detach().item(), idr_torch.rank))
+        print("Rank %d LR : %f" % (idr_torch.rank, lr_gpu.cpu().detach().item()))
 
         for epoch in range(1,epochs+1):
 
@@ -276,7 +276,7 @@ if __name__ == "__main__":
             print("%d rank passed barrier" % idr_torch.rank)
             dist.broadcast(lr_gpu, src = 0)
 
-            print("LR is %f and my rank is %d" % (lr_gpu, idr_torch.rank))
+            print("Rank %d LR : %f" % (idr_torch.rank, lr_gpu.cpu().detach().detach()))
             scheduler.step(lr_gpu)
 
 
