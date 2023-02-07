@@ -221,11 +221,8 @@ if __name__ == "__main__":
         else:
             lr_gpu = torch.Tensor([0.00]).to(device)
 
-        print("%d rank at barrier" % idr_torch.rank)
         dist.barrier()
-        print("%d rank passed barrier" % idr_torch.rank)
         dist.broadcast(lr_gpu, src = 0)
-        print("Rank %d LR : %f" % (idr_torch.rank, lr_gpu.cpu().detach().item()))
 
         for epoch in range(1,epochs+1):
 
@@ -271,12 +268,9 @@ if __name__ == "__main__":
 
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
 
-            print("%d rank at barrier" % idr_torch.rank)
             dist.barrier()
-            print("%d rank passed barrier" % idr_torch.rank)
             dist.broadcast(lr_gpu, src = 0)
 
-            print("Rank %d LR : %f" % (idr_torch.rank, lr_gpu.cpu().detach().item()))
             scheduler.step(lr_gpu)
 
 
