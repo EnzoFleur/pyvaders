@@ -116,7 +116,7 @@ if __name__ == "__main__":
     
     dataset_train = BookDataset(data_dir, encoder = "DistilBERT", train=True, columns = columns, max_len = 512, seed = 42)
 
-    features = features[features.author.isin(dataset_train.authors)]
+    # features = features[features.author.isin(dataset_train.authors)]
 
     stdScale = StandardScaler()
     stdScale.fit(features.drop(["author"], axis=1))
