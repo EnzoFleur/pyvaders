@@ -212,15 +212,16 @@ if __name__ == "__main__":
         if style:
             res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index().sort_values(by=["author"]), n_fold=10)
             print(res_df)
+            mse = res_df['mean'].mean()
             res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
 
-        return ce, lr
+        return ce, lr, mse
 
     def fit(epochs, model, loss_fn, optimizer, scheduler, scaler, train_dl, test_dataset, features):
 
         if idr_torch.rank == 0:
-            ce, lr = eval_fn(test_dataset, model.module, features)
-            lr_gpu = torch.Tensor([lr]).to(device)
+            ce, lr, mse = eval_fn(test_dataset, model.module, features)
+            lr_gpu = torch.Tensor([mse]).to(device)
         else:
             lr_gpu = torch.Tensor([0.00]).to(device)
 
@@ -265,10 +266,10 @@ if __name__ == "__main__":
             if (idr_torch.rank == 0):
                 
                 if (epoch % 5 == 0):
-                    ce, lr = eval_fn(test_dataset, model.module, features, style=True)
-                    lr_gpu = torch.Tensor([lr]).to(device)
+                    ce, lr, mse = eval_fn(test_dataset, model.module, features, style=True)
+                    lr_gpu = torch.Tensor([mse]).to(device)
 
-                print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr), flush=True)
+                print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f, MSE %.03f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr, mse), flush=True)
 
             dist.barrier()
             dist.broadcast(lr_gpu, src = 0)
