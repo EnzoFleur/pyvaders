@@ -179,12 +179,13 @@ if __name__ == "__main__":
             aut_vars = []
             aut_embeddings = []
 
-            # with autocast():
             for text in tqdm(test_dataset.texts):
 
                 input_ids, attention_masks = test_dataset.tokenize_caption(text, device)
 
-                doc_emb, _ = model(input_ids, attention_masks)
+                with autocast():
+                    doc_emb, _ = model(input_ids, attention_masks)
+        
                 doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
             ll = [i for i in range(model.na)]
@@ -237,18 +238,17 @@ if __name__ == "__main__":
             if idr_torch.rank == 0: start = datetime.now()
 
             for batch in train_dl:
-                
+                                    
+                author, doc, doc_f, y_a, y_f = batch.values()
+
+                input_ids, attention_masks = dataset_train.tokenize_caption(doc, device)
+
+                doc_f = doc_f.to(device)
+                author = author.to(device)
+                y_a = y_a.to(device)
+                y_f = y_f.to(device)
+
                 with autocast():
-                    
-                    author, doc, doc_f, y_a, y_f = batch.values()
-
-                    input_ids, attention_masks = dataset_train.tokenize_caption(doc, device)
-
-                    doc_f = doc_f.to(device)
-                    author = author.to(device)
-                    y_a = y_a.to(device)
-                    y_f = y_f.to(device)
-
                     loss, f_loss, a_loss, p_loss = model.module.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
 
                 optimizer.zero_grad()
