@@ -43,6 +43,8 @@ def set_seed(graine):
 
 ft_dict = {"True":True, "False":False}
 
+torch.autograd.set_detect_anomaly(True)
+
 if __name__ == "__main__":
 
     NODE_ID = os.environ['SLURM_NODEID']
@@ -196,6 +198,10 @@ if __name__ == "__main__":
         aut_embeddings = np.vstack(aut_embeddings)
         aut_vars = np.vstack(aut_vars)
 
+        np.save(os.path.join("results", method, "aut_%s.npy" % method), aut_embeddings)
+        np.save(os.path.join("results", method, "aut_var_%s.npy" % method), aut_vars)
+        np.save(os.path.join("results", method, "doc_%s.npy" % method), doc_embeddings)
+        
         aa = normalize(aut_embeddings, axis=1)
         dd = normalize(doc_embeddings, axis=1)
         y_score = normalize( dd @ aa.transpose(),norm="l1")
@@ -207,10 +213,6 @@ if __name__ == "__main__":
             print(res_df)
             res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
 
-        np.save(os.path.join("results", method, "aut_%s.npy" % method), aut_embeddings)
-        np.save(os.path.join("results", method, "aut_var_%s.npy" % method), aut_vars)
-        np.save(os.path.join("results", method, "doc_%s.npy" % method), doc_embeddings)
-        
         return ce, lr
 
     def fit(epochs, model, loss_fn, optimizer, scheduler, scaler, train_dl, test_dataset, features):
