@@ -127,7 +127,7 @@ class VADER(nn.Module):
         if apply_sigmoid:
             logits = torch.sigmoid(logits)
 
-        return logits.type(torch.float32)
+        return logits
 
     def logistic_classifier(self, x, apply_sigmoid=True):
 
@@ -136,7 +136,7 @@ class VADER(nn.Module):
         if apply_sigmoid:
             logits = torch.sigmoid(logits)
 
-        return logits.type(torch.float32)
+        return logits
 
     def compute_masked_means(self, outputs, masks):
         # we don't want to include padding tokens
