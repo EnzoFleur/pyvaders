@@ -43,7 +43,7 @@ def set_seed(graine):
 
 ft_dict = {"True":True, "False":False}
 
-torch.autograd.set_detect_anomaly(True)
+# torch.autograd.set_detect_anomaly(True)
 
 if __name__ == "__main__":
 
