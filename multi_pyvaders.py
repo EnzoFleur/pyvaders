@@ -221,7 +221,11 @@ if __name__ == "__main__":
 
         if idr_torch.rank == 0:
             ce, lr, mse = eval_fn(test_dataset, model.module, features)
-            lr_gpu = torch.Tensor([mse]).to(device)
+            if ALPHA <= 0.5:
+                lr_gpu = torch.Tensor([lr_gpu]).to(device)
+            else:
+                lr_gpu = torch.Tensor([mse]).to(device)
+
         else:
             lr_gpu = torch.Tensor([0.00]).to(device)
 
@@ -267,7 +271,10 @@ if __name__ == "__main__":
                 
                 if (epoch % 5 == 0):
                     ce, lr, mse = eval_fn(test_dataset, model.module, features, style=True)
-                    lr_gpu = torch.Tensor([mse]).to(device)
+                    if ALPHA <= 0.5:
+                        lr_gpu = torch.Tensor([lr_gpu]).to(device)
+                    else:
+                        lr_gpu = torch.Tensor([mse]).to(device)
 
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f, MSE %.03f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr, mse), flush=True)
 
