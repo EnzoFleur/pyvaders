@@ -279,7 +279,7 @@ if __name__ == "__main__":
                         lr_gpu = torch.Tensor([mse]).to(device)
 
                     if (epoch >= 40):
-                        torch.save(model, os.path.join("results", method, "%s_%d_ckpt.pt" % (method, epoch)))
+                        torch.save(model.state_dict(), os.path.join("results", method, "%s_%d_ckpt.pt" % (method, epoch)))
 
                 print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f, MSE %.03f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr, mse), flush=True)
 
