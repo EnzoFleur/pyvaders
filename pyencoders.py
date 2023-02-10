@@ -48,19 +48,19 @@ class MLP(nn.Module):
             self.input_size = input_size
             self.output_size = output_size
 
-            self.mlp = nn.Sequential(*[
-                nn.Dropout(0.1),
-                nn.Linear(self.input_size, self.input_size),
-                nn.BatchNorm1d(self.input_size),
-                nn.Tanh(),
-                nn.Dropout(0.1),
-                nn.Linear(self.input_size, self.output_size),
-                nn.BatchNorm1d(self.output_size),
-            ])
+            self.dropout = nn.Dropout(0.2)
+            self.fc1 = nn.Linear(self.input_size, self.input_size)
+            self.bn1 = nn.BatchNorm1d(self.input_size)
+            self.fc2 = nn.Linear(self.input_size, self.output_size)
+            self.bn2 = nn.BatchNorm1d(self.output_size)
         
         def forward(self, x):
 
-            x = self.mlp(x)
+            x = self.dropout(x)
+            x = self.fc1(x)
+            x = F.tanh(self.bn1(x))
+            x = self.dropout(x)
+            x = self.bn2(self.fc2(x))
 
             return x
 
