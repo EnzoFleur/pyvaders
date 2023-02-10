@@ -58,9 +58,9 @@ class MLP(nn.Module):
 
             x = self.dropout(x)
             x = self.fc1(x)
-            x = F.tanh(self.bn1(x))
+            x = F.tanh(x)
             x = self.dropout(x)
-            x = self.bn2(self.fc2(x))
+            x = self.fc2(x)
 
             return x
 
