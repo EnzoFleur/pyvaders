@@ -151,10 +151,10 @@ if __name__ == "__main__":
 
     criterion = nn.BCEWithLogitsLoss()
 
-    # optimizer = torch.optim.Adam(params = ddp_model.parameters(), lr = LEARNING_RATE)
+    optimizer = torch.optim.Adam(params = ddp_model.parameters(), lr = LEARNING_RATE)
 
-    optimizer = torch.optim.Adam(params = [{'params': ddp_model.module.encoder.parameters(), 'lr': 1e-4},
-                                           {'params': [*ddp_model.module.params.parameters(), *ddp_model.module.mean_author.parameters(), *ddp_model.module.logvar_author.parameters()], 'lr': LEARNING_RATE}])
+    # optimizer = torch.optim.Adam(params = [{'params': ddp_model.module.encoder.parameters(), 'lr': 1e-4},
+    #                                        {'params': [*ddp_model.module.params.parameters(), *ddp_model.module.mean_author.parameters(), *ddp_model.module.logvar_author.parameters()], 'lr': LEARNING_RATE}])
 
     total_steps = len(train_dl) * EPOCHS
 
