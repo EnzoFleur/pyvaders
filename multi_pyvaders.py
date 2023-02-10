@@ -43,7 +43,7 @@ def set_seed(graine):
 
 ft_dict = {"True":True, "False":False}
 
-# torch.autograd.set_detect_anomaly(True)
+torch.autograd.set_detect_anomaly(True)
 
 if __name__ == "__main__":
 
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                            mode='max',
                                                            factor=0.5, 
-                                                           patience=5, 
+                                                           patience=100, 
                                                            threshold=0.01, verbose=True)
 
     # scheduler = get_linear_schedule_with_warmup(optimizer,
