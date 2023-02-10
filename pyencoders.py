@@ -58,9 +58,9 @@ class MLP(nn.Module):
 
             x = self.dropout(x)
             x = self.fc1(x)
-            x = F.tanh(x)
+            x = F.tanh(self.bn1(self.fc1(x)))
             x = self.dropout(x)
-            x = self.fc2(x)
+            x = self.bn2(self.fc2(x))
 
             return x
 
@@ -83,7 +83,7 @@ class VADER(nn.Module):
 
         elif encoder=="BERT":
             self.encoder = BertModel.from_pretrained(BERT_PATH, output_hidden_states=True)
-            self.num_hidden_layers = 12
+            self.num_hidden_layers = 13
 
         # for param in self.encoder.parameters():
         #     param.requires_grad = self.finetune
