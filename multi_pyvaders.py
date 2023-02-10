@@ -93,7 +93,7 @@ if __name__ == "__main__":
     FREEZE = ft_dict[args.freeze]
 
     MAX_LEN = 512
-    # CLIPNORM =  1.0
+    CLIPNORM = 5.0
 
     # LEARNING_RATE = 5e-5
     # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\gutenberg"
@@ -261,6 +261,10 @@ if __name__ == "__main__":
                 optimizer.zero_grad()
 
                 scaler.scale(loss).backward()
+
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
+
                 scaler.step(optimizer)
                 scaler.update()
 
