@@ -48,6 +48,7 @@ class MLP(nn.Module):
             self.input_size = input_size
             self.output_size = output_size
 
+            self.activation = nn.Tanh()
             self.dropout = nn.Dropout(0.2)
             self.fc1 = nn.Linear(self.input_size, self.input_size)
             self.bn1 = nn.BatchNorm1d(self.input_size)
@@ -58,7 +59,7 @@ class MLP(nn.Module):
 
             x = self.dropout(x)
             x = self.fc1(x)
-            x = nn.Tanh(self.bn1(self.fc1(x)))
+            x = self.activation(self.bn1(self.fc1(x)))
             x = self.dropout(x)
             x = self.bn2(self.fc2(x))
 
