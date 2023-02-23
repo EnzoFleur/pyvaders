@@ -6,7 +6,7 @@ import torch.nn as nn
 from transformers import DistilBertModel, DistilBertTokenizer
 from sklearn import metrics
 from sklearn.preprocessing import normalize
-from sklearn.metrics import coverage_error,label_ranking_average_precision_score
+from sklearn.metrics import coverage_error,label_ranking_average_precision_score, accuracy_score
 from tqdm import tqdm
 import numpy as np
 import re
@@ -206,13 +206,14 @@ if __name__ == "__main__":
 
             test_labels = np.vstack(test_labels)
 
-            ce = coverage_error(aut_doc_test, test_labels)
-            lr = label_ranking_average_precision_score(aut_doc_test, test_labels)*100
+            ce = coverage_error(aut_doc_test, test_labels)/na *100
+            lr = label_ranking_average_precision_score(aut_doc_test, test_labels) * 100
+            ac = accuracy_score(np.argmax(aut_doc_test, axis=1), np.argmax(test_labels, axis=1)) * 100
 
-            print("coverage, precision")
-            print(str(round(ce,2)) + ", "+ str(round(lr,2)))
+            print("coverage, precision, accuracy")
+            print(str(round(ce,2)) + ", "+ str(round(lr,2)) + ", " + str(round(ac,3)))
 
-        return ce, lr
+        return ce, lr, ac
 
     def fit(epochs, model, loss_fn, opt, train_dl, test_dl, aut_doc_test):
 
@@ -231,9 +232,9 @@ if __name__ == "__main__":
                 opt.step()
                 opt.zero_grad()
 
-            ce, lr = eval_fn(test_dl, aut_doc_test, model)
+            ce, lr, ac = eval_fn(test_dl, aut_doc_test, model)
 
-            print("[%d/%d]  F-loss : %.4f, Coverage %.2f, LRAP %.2f" % (epoch, epochs, loss.item(), ce, lr), flush=True)
+            print("[%d/%d]  F-loss : %.4f, Coverage %.2f, LRAP %.2f, Accuracy %0.2f" % (epoch, epochs, loss.item(), ce, lr, ac), flush=True)
 
     print("------------ Beginning Training ------------", flush=True)
 
@@ -279,8 +280,10 @@ if __name__ == "__main__":
     y_score = normalize( dd @ aa.transpose(),norm="l1")
     ce = coverage_error(aut_doc_test[doc_tp,:], y_score)/na*100
     lr = label_ranking_average_precision_score(aut_doc_test[doc_tp,:], y_score)*100
-    print("Final coverage, precision with cosine similarity")
-    print(str(round(ce,2)) + ", "+ str(round(lr,2)))
+    ac = accuracy_score(np.argmax(aut_doc_test[doc_tp,:], axis=1), np.argmax(y_score, axis=1)) * 100
+
+    print("Final coverage, precision, accuracy with cosine similarity")
+    print(str(round(ce,2)) + ", "+ str(round(lr,2)) + ", "+ str(round(ac,2)))
 
     features = pd.read_csv(os.path.join("data", dataset, "features", "features.csv"), sep=";")
 
