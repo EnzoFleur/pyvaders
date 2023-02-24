@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler, normalize
-from sklearn.metrics import coverage_error,label_ranking_average_precision_score
+from sklearn.metrics import coverage_error,label_ranking_average_precision_score, accuracy_score
 from tqdm import tqdm
 import numpy as np
 from random import sample, seed
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                            mode='max',
                                                            factor=0.5, 
-                                                           patience=5, 
+                                                           patience=2, 
                                                            threshold=0.01, verbose=True)
 
     # scheduler = get_linear_schedule_with_warmup(optimizer,
@@ -208,6 +208,7 @@ if __name__ == "__main__":
         y_score = normalize( dd @ aa.transpose(),norm="l1")
         ce = coverage_error(test_dataset.aut_doc_test, y_score)/test_dataset.na*100
         lr = label_ranking_average_precision_score(test_dataset.aut_doc_test, y_score)*100
+        ac = accuracy_score(np.argmax(test_dataset.aut_doc_test, axis=1), np.argmax(y_score, axis=1))*100
 
         if style:
             res_df = style_embedding_evaluation(aut_embeddings, features.groupby("author").mean().reset_index().sort_values(by=["author"]), n_fold=10)
@@ -215,7 +216,7 @@ if __name__ == "__main__":
             mse = res_df['mean'].mean()
             res_df.to_csv(os.path.join("results", method, "style_%s.csv" % method), sep=";")
 
-        return ce, lr, mse
+        return ce, lr, ac, mse
 
     def fit(epochs, model, loss_fn, optimizer, scheduler, scaler, train_dl, test_dataset, features):
 
@@ -276,7 +277,7 @@ if __name__ == "__main__":
             if (idr_torch.rank == 0):
                 
                 if (epoch % 5 == 0):
-                    ce, lr, mse = eval_fn(test_dataset, model.module, features, style=True)
+                    ce, lr, ac, mse = eval_fn(test_dataset, model.module, features, style=True)
                     if ALPHA <= 0.5:
                         lr_gpu = torch.Tensor([lr]).to(device)
                     else:
@@ -285,7 +286,7 @@ if __name__ == "__main__":
                     if (epoch >= 40):
                         torch.save(model.state_dict(), os.path.join("results", method, "%s_%d_ckpt.pt" % (method, epoch)))
 
-                print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f, MSE %.03f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr, mse), flush=True)
+                print("[%d/%d] in %s F-loss : %.4f, A-loss : %.4f, I-loss : %.4f, Coverage %.2f, LRAP %.2f, Accuracy %0.2f, MSE %.03f" % (epoch, epochs, str(datetime.now() - start), f_loss, a_loss, p_loss, ce, lr, ac, mse), flush=True)
 
             dist.barrier()
             dist.broadcast(lr_gpu, src = 0)
