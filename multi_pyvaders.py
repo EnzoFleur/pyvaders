@@ -276,7 +276,7 @@ if __name__ == "__main__":
 
             if (idr_torch.rank == 0):
                 
-                if (epoch % 5 == 0):
+                if (epoch % 1 == 0):
                     ce, lr, ac, mse = eval_fn(test_dataset, model.module, features, style=True)
                     if ALPHA <= 0.5:
                         lr_gpu = torch.Tensor([ac]).to(device)
