@@ -221,10 +221,10 @@ if __name__ == "__main__":
     def fit(epochs, model, loss_fn, optimizer, scheduler, scaler, train_dl, test_dataset, features):
 
         if idr_torch.rank == 0:
-            ce, lr, mse = eval_fn(test_dataset, model.module, features)
+            ce, lr, ac, mse = eval_fn(test_dataset, model.module, features)
             if ALPHA <= 0.5:
                 print("Learning rate scheduling is done on PRECISION", flush=True)
-                lr_gpu = torch.Tensor([lr]).to(device)
+                lr_gpu = torch.Tensor([ac]).to(device)
             else:
                 print("Learning rate scheduling is done on MSE", flush=True)
                 lr_gpu = torch.Tensor([mse]).to(device)
@@ -279,7 +279,7 @@ if __name__ == "__main__":
                 if (epoch % 5 == 0):
                     ce, lr, ac, mse = eval_fn(test_dataset, model.module, features, style=True)
                     if ALPHA <= 0.5:
-                        lr_gpu = torch.Tensor([lr]).to(device)
+                        lr_gpu = torch.Tensor([ac]).to(device)
                     else:
                         lr_gpu = torch.Tensor([mse]).to(device)
 
