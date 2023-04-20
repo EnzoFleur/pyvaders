@@ -43,7 +43,7 @@ def set_seed(graine):
 
 ft_dict = {"True":True, "False":False}
 
-torch.autograd.set_detect_anomaly(True)
+# torch.autograd.set_detect_anomaly(True)
 
 if __name__ == "__main__":
 
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     #                                             num_warmup_steps = 0, 
     #                                             num_training_steps = total_steps)
 
-    scaler = GradScaler()
+    # scaler = GradScaler()
 
     def eval_fn(test_dataset, model, features, style=True):
         
@@ -183,8 +183,8 @@ if __name__ == "__main__":
 
                 input_ids, attention_masks = test_dataset.tokenize_caption(text, device)
 
-                with autocast():
-                    doc_emb, _ = model(input_ids, attention_masks)
+                # with autocast():
+                doc_emb, _ = model(input_ids, attention_masks)
         
                 doc_embeddings.append(doc_emb.mean(dim=0).cpu().detach().numpy())
 
@@ -256,23 +256,23 @@ if __name__ == "__main__":
                 y_a = y_a.to(device)
                 y_f = y_f.to(device)
 
-                with autocast():
-                    loss, f_loss, a_loss, p_loss = model.module.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
+                # with autocast():
+                loss, f_loss, a_loss, p_loss = model.module.loss_VIB(author, input_ids, attention_masks, doc_f, y_a, y_f, loss_fn)
 
                 optimizer.zero_grad()
 
-                scaler.scale(loss).backward()
+                # scaler.scale(loss).backward()
 
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
+                # scaler.unscale_(optimizer)
+                # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
 
-                scaler.step(optimizer)
-                scaler.update()
+                # scaler.step(optimizer)
+                # scaler.update()
 
-                # loss.backward()
-                # # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
-                # optimizer.step()
-                # scheduler.step()
+                loss.backward()
+                # torch.nn.utils.clip_grad_norm_(model.parameters(), CLIPNORM)
+                optimizer.step()
+                scheduler.step()
 
             if (idr_torch.rank == 0):
                 
@@ -300,4 +300,4 @@ if __name__ == "__main__":
         if not os.path.isdir(os.path.join("results",method)):
             os.mkdir(os.path.join("results",method))
 
-    fit(EPOCHS, ddp_model, criterion, optimizer, scheduler, scaler, train_dl, dataset_test, features)
+    fit(EPOCHS, ddp_model, criterion, optimizer, scheduler, None, train_dl, dataset_test, features)
