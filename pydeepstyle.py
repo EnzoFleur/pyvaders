@@ -259,11 +259,15 @@ if __name__ == "__main__":
 
     doc_embeddings = np.vstack(doc_embeddings)
 
+    np.save(os.path.join("results", method, "train_docs_%s.npy" % method), doc_embeddings)
+
     author_embeddings = []
     for i in range(na):
         author_embeddings.append(np.mean(doc_embeddings[np.where(y_train==i)[0],:], axis=0))
 
     author_embeddings = np.vstack(author_embeddings)
+
+    np.save(os.path.join("results", method, "aut_%s.npy" % method), author_embeddings)
 
     doc_embeddings = []
     for doc, mask, _ in test_dl:
@@ -274,6 +278,8 @@ if __name__ == "__main__":
         doc_embeddings.append(model.doc_embedding(doc, mask).cpu().detach().numpy())
 
     doc_embeddings = np.vstack(doc_embeddings)
+
+    np.save(os.path.join("results", method, "test_docs_%s.npy" % method), doc_embeddings)
 
     aa = normalize(author_embeddings, axis=1)
     dd = normalize(doc_embeddings, axis=1)
