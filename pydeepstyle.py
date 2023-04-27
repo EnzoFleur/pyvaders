@@ -122,7 +122,7 @@ if __name__ == "__main__":
     EPOCHS = args.epochs
     
     MAX_LEN = 512
-    LEARNING_RATE = 3e-5
+    LEARNING_RATE = 5e-5
     CLIPNORM =  1.0
 
     # data_dir = "C:\\Users\\EnzoT\\Documents\\datasets\\gutenberg"
