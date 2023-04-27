@@ -240,6 +240,9 @@ if __name__ == "__main__":
 
     fit(EPOCHS, model, loss_fn, optimizer, train_dl, test_dl, aut_doc_test[doc_tp,:])
 
+    if not os.path.isdir(os.path.join("results",method)):
+        os.mkdir(os.path.join("results",method))
+
     #### Final Evaluation ####
     x = []
     x_mask = []
@@ -292,9 +295,6 @@ if __name__ == "__main__":
     print(str(round(ce,2)) + ", "+ str(round(lr,2)) + ", "+ str(round(ac,2)))
 
     features = pd.read_csv(os.path.join("data", dataset, "features", "features.csv"), sep=";")
-
-    if not os.path.isdir(os.path.join("results",method)):
-        os.mkdir(os.path.join("results",method))
 
     res_df = style_embedding_evaluation(author_embeddings, features.groupby("author").mean().reset_index(), n_fold=10)
     print(res_df)
