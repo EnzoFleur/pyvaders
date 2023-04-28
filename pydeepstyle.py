@@ -13,6 +13,7 @@ import re
 import os
 import argparse
 
+
 from regressor import style_embedding_evaluation
 
 # Setting up the device for GPU usage
@@ -158,6 +159,8 @@ if __name__ == "__main__":
 
     doc_train, doc_test, docid_train, docid_test, y_train, y_test = train_test_split(documents, list(doc2id.values()), list(di2ai.values()), test_size=0.2, stratify=list(di2ai.values()))
 
+    
+
     print("Build pairs")
     # For testing purpose
     doc_tp = docid_test
@@ -242,6 +245,10 @@ if __name__ == "__main__":
 
     if not os.path.isdir(os.path.join("results",method)):
         os.mkdir(os.path.join("results",method))
+
+    import pickle
+    with open(os.path.join("results", method, "doc_ids.pkl"), 'rb') as f:
+         pickle.dump([docid_test, docid_train], f)
 
     #### Final Evaluation ####
     x = []
